@@ -1,0 +1,90 @@
+﻿@model KeystoneLogistics.Models.Load
+
+@{
+    ViewBag.Title = "Details";
+}
+
+<h2>Details</h2>
+
+<div>
+    <h4>Load</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.TrackingNumber)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.TrackingNumber)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.PickupLocation)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.PickupLocation)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.DropoffLocation)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.DropoffLocation)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.CargoDescription)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.CargoDescription)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Status)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Status)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.DispatchedDate)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.DispatchedDate)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.DeliveredDate)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.DeliveredDate)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Customer.CompanyName)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Customer.CompanyName)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Driver.FullName)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Driver.FullName)
+        </dd>
+
+    </dl>
+</div>
+<p>
+    @Html.ActionLink("Edit", "Edit", new { id = Model.LoadId }) |
+    @Html.ActionLink("Back to List", "Index")
+</p>

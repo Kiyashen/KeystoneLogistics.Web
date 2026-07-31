@@ -1,0 +1,81 @@
+﻿@model IEnumerable<KeystoneLogistics.Models.Load>
+
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Index</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.TrackingNumber)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.PickupLocation)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.DropoffLocation)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.CargoDescription)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Status)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.DispatchedDate)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.DeliveredDate)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Customer.CompanyName)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Driver.FullName)
+        </th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.TrackingNumber)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.PickupLocation)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.DropoffLocation)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.CargoDescription)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Status)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.DispatchedDate)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.DeliveredDate)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Customer.CompanyName)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Driver.FullName)
+        </td>
+        <td>
+            @Html.ActionLink("Edit", "Edit", new { id=item.LoadId }) |
+            @Html.ActionLink("Details", "Details", new { id=item.LoadId }) |
+            @Html.ActionLink("Delete", "Delete", new { id=item.LoadId })
+        </td>
+    </tr>
+}
+
+</table>

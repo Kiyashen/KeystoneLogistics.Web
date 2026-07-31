@@ -1,0 +1,362 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+      <Schema Namespace="KeystoneLogisticsDBModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="AuditLogs">
+          <Key>
+            <PropertyRef Name="AuditId" />
+          </Key>
+          <Property Name="AuditId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="LoadId" Type="int" />
+          <Property Name="Action" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="PerformedBy" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="Timestamp" Type="datetime" />
+        </EntityType>
+        <EntityType Name="Customers">
+          <Key>
+            <PropertyRef Name="CustomerId" />
+          </Key>
+          <Property Name="CustomerId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CompanyName" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="ContactPerson" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="Email" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="Phone" Type="nvarchar" MaxLength="20" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Drivers">
+          <Key>
+            <PropertyRef Name="DriverId" />
+          </Key>
+          <Property Name="DriverId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="FullName" Type="nvarchar" MaxLength="100" Nullable="false" />
+          <Property Name="Phone" Type="nvarchar" MaxLength="20" Nullable="false" />
+          <Property Name="VehicleRegistration" Type="nvarchar" MaxLength="20" Nullable="false" />
+          <Property Name="IsAvailable" Type="bit" />
+        </EntityType>
+        <EntityType Name="Loads">
+          <Key>
+            <PropertyRef Name="LoadId" />
+          </Key>
+          <Property Name="LoadId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="TrackingNumber" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="CustomerId" Type="int" />
+          <Property Name="DriverId" Type="int" />
+          <Property Name="PickupLocation" Type="nvarchar" MaxLength="255" Nullable="false" />
+          <Property Name="DropoffLocation" Type="nvarchar" MaxLength="255" Nullable="false" />
+          <Property Name="CargoDescription" Type="nvarchar" MaxLength="255" Nullable="false" />
+          <Property Name="Status" Type="nvarchar" MaxLength="50" />
+          <Property Name="DispatchedDate" Type="datetime" />
+          <Property Name="DeliveredDate" Type="datetime" />
+        </EntityType>
+        <EntityType Name="PODDocuments">
+          <Key>
+            <PropertyRef Name="PODId" />
+          </Key>
+          <Property Name="PODId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="LoadId" Type="int" />
+          <Property Name="FilePath" Type="nvarchar" MaxLength="500" Nullable="false" />
+          <Property Name="UploadedAt" Type="datetime" />
+          <Property Name="Notes" Type="nvarchar" MaxLength="255" />
+        </EntityType>
+        <Association Name="FK__AuditLogs__LoadI__10566F31">
+          <End Role="Loads" Type="Self.Loads" Multiplicity="0..1" />
+          <End Role="AuditLogs" Type="Self.AuditLogs" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Loads">
+              <PropertyRef Name="LoadId" />
+            </Principal>
+            <Dependent Role="AuditLogs">
+              <PropertyRef Name="LoadId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Loads__CustomerI__07C12930">
+          <End Role="Customers" Type="Self.Customers" Multiplicity="0..1" />
+          <End Role="Loads" Type="Self.Loads" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Customers">
+              <PropertyRef Name="CustomerId" />
+            </Principal>
+            <Dependent Role="Loads">
+              <PropertyRef Name="CustomerId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Loads__DriverId__08B54D69">
+          <End Role="Drivers" Type="Self.Drivers" Multiplicity="0..1" />
+          <End Role="Loads" Type="Self.Loads" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Drivers">
+              <PropertyRef Name="DriverId" />
+            </Principal>
+            <Dependent Role="Loads">
+              <PropertyRef Name="DriverId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__PODDocume__LoadI__0C85DE4D">
+          <End Role="Loads" Type="Self.Loads" Multiplicity="0..1" />
+          <End Role="PODDocuments" Type="Self.PODDocuments" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Loads">
+              <PropertyRef Name="LoadId" />
+            </Principal>
+            <Dependent Role="PODDocuments">
+              <PropertyRef Name="LoadId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="KeystoneLogisticsDBModelStoreContainer">
+          <EntitySet Name="AuditLogs" EntityType="Self.AuditLogs" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Customers" EntityType="Self.Customers" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Drivers" EntityType="Self.Drivers" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Loads" EntityType="Self.Loads" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="PODDocuments" EntityType="Self.PODDocuments" Schema="dbo" store:Type="Tables" />
+          <AssociationSet Name="FK__AuditLogs__LoadI__10566F31" Association="Self.FK__AuditLogs__LoadI__10566F31">
+            <End Role="Loads" EntitySet="Loads" />
+            <End Role="AuditLogs" EntitySet="AuditLogs" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Loads__CustomerI__07C12930" Association="Self.FK__Loads__CustomerI__07C12930">
+            <End Role="Customers" EntitySet="Customers" />
+            <End Role="Loads" EntitySet="Loads" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Loads__DriverId__08B54D69" Association="Self.FK__Loads__DriverId__08B54D69">
+            <End Role="Drivers" EntitySet="Drivers" />
+            <End Role="Loads" EntitySet="Loads" />
+          </AssociationSet>
+          <AssociationSet Name="FK__PODDocume__LoadI__0C85DE4D" Association="Self.FK__PODDocume__LoadI__0C85DE4D">
+            <End Role="Loads" EntitySet="Loads" />
+            <End Role="PODDocuments" EntitySet="PODDocuments" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="KeystoneLogisticsDBModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="AuditLog">
+          <Key>
+            <PropertyRef Name="AuditId" />
+          </Key>
+          <Property Name="AuditId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="LoadId" Type="Int32" />
+          <Property Name="Action" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="PerformedBy" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Timestamp" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="Load" Relationship="Self.FK__AuditLogs__LoadI__10566F31" FromRole="AuditLogs" ToRole="Loads" />
+        </EntityType>
+        <EntityType Name="Customer">
+          <Key>
+            <PropertyRef Name="CustomerId" />
+          </Key>
+          <Property Name="CustomerId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CompanyName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="ContactPerson" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Email" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Phone" Type="String" MaxLength="20" FixedLength="false" Unicode="true" Nullable="false" />
+          <NavigationProperty Name="Loads" Relationship="Self.FK__Loads__CustomerI__07C12930" FromRole="Customers" ToRole="Loads" />
+        </EntityType>
+        <EntityType Name="Driver">
+          <Key>
+            <PropertyRef Name="DriverId" />
+          </Key>
+          <Property Name="DriverId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="FullName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Phone" Type="String" MaxLength="20" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="VehicleRegistration" Type="String" MaxLength="20" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="IsAvailable" Type="Boolean" />
+          <NavigationProperty Name="Loads" Relationship="Self.FK__Loads__DriverId__08B54D69" FromRole="Drivers" ToRole="Loads" />
+        </EntityType>
+        <EntityType Name="Load">
+          <Key>
+            <PropertyRef Name="LoadId" />
+          </Key>
+          <Property Name="LoadId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="TrackingNumber" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="CustomerId" Type="Int32" />
+          <Property Name="DriverId" Type="Int32" />
+          <Property Name="PickupLocation" Type="String" MaxLength="255" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="DropoffLocation" Type="String" MaxLength="255" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="CargoDescription" Type="String" MaxLength="255" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Status" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DispatchedDate" Type="DateTime" Precision="3" />
+          <Property Name="DeliveredDate" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="AuditLogs" Relationship="Self.FK__AuditLogs__LoadI__10566F31" FromRole="Loads" ToRole="AuditLogs" />
+          <NavigationProperty Name="Customer" Relationship="Self.FK__Loads__CustomerI__07C12930" FromRole="Loads" ToRole="Customers" />
+          <NavigationProperty Name="Driver" Relationship="Self.FK__Loads__DriverId__08B54D69" FromRole="Loads" ToRole="Drivers" />
+          <NavigationProperty Name="PODDocuments" Relationship="Self.FK__PODDocume__LoadI__0C85DE4D" FromRole="Loads" ToRole="PODDocuments" />
+        </EntityType>
+        <EntityType Name="PODDocument">
+          <Key>
+            <PropertyRef Name="PODId" />
+          </Key>
+          <Property Name="PODId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="LoadId" Type="Int32" />
+          <Property Name="FilePath" Type="String" MaxLength="500" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="UploadedAt" Type="DateTime" Precision="3" />
+          <Property Name="Notes" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="Load" Relationship="Self.FK__PODDocume__LoadI__0C85DE4D" FromRole="PODDocuments" ToRole="Loads" />
+        </EntityType>
+        <Association Name="FK__AuditLogs__LoadI__10566F31">
+          <End Role="Loads" Type="Self.Load" Multiplicity="0..1" />
+          <End Role="AuditLogs" Type="Self.AuditLog" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Loads">
+              <PropertyRef Name="LoadId" />
+            </Principal>
+            <Dependent Role="AuditLogs">
+              <PropertyRef Name="LoadId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Loads__CustomerI__07C12930">
+          <End Role="Customers" Type="Self.Customer" Multiplicity="0..1" />
+          <End Role="Loads" Type="Self.Load" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Customers">
+              <PropertyRef Name="CustomerId" />
+            </Principal>
+            <Dependent Role="Loads">
+              <PropertyRef Name="CustomerId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__Loads__DriverId__08B54D69">
+          <End Role="Drivers" Type="Self.Driver" Multiplicity="0..1" />
+          <End Role="Loads" Type="Self.Load" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Drivers">
+              <PropertyRef Name="DriverId" />
+            </Principal>
+            <Dependent Role="Loads">
+              <PropertyRef Name="DriverId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK__PODDocume__LoadI__0C85DE4D">
+          <End Role="Loads" Type="Self.Load" Multiplicity="0..1" />
+          <End Role="PODDocuments" Type="Self.PODDocument" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Loads">
+              <PropertyRef Name="LoadId" />
+            </Principal>
+            <Dependent Role="PODDocuments">
+              <PropertyRef Name="LoadId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="KeystoneLogisticsDBEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="AuditLogs" EntityType="Self.AuditLog" />
+          <EntitySet Name="Customers" EntityType="Self.Customer" />
+          <EntitySet Name="Drivers" EntityType="Self.Driver" />
+          <EntitySet Name="Loads" EntityType="Self.Load" />
+          <EntitySet Name="PODDocuments" EntityType="Self.PODDocument" />
+          <AssociationSet Name="FK__AuditLogs__LoadI__10566F31" Association="Self.FK__AuditLogs__LoadI__10566F31">
+            <End Role="Loads" EntitySet="Loads" />
+            <End Role="AuditLogs" EntitySet="AuditLogs" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Loads__CustomerI__07C12930" Association="Self.FK__Loads__CustomerI__07C12930">
+            <End Role="Customers" EntitySet="Customers" />
+            <End Role="Loads" EntitySet="Loads" />
+          </AssociationSet>
+          <AssociationSet Name="FK__Loads__DriverId__08B54D69" Association="Self.FK__Loads__DriverId__08B54D69">
+            <End Role="Drivers" EntitySet="Drivers" />
+            <End Role="Loads" EntitySet="Loads" />
+          </AssociationSet>
+          <AssociationSet Name="FK__PODDocume__LoadI__0C85DE4D" Association="Self.FK__PODDocume__LoadI__0C85DE4D">
+            <End Role="Loads" EntitySet="Loads" />
+            <End Role="PODDocuments" EntitySet="PODDocuments" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="KeystoneLogisticsDBModelStoreContainer" CdmEntityContainer="KeystoneLogisticsDBEntities">
+          <EntitySetMapping Name="AuditLogs">
+            <EntityTypeMapping TypeName="KeystoneLogisticsDBModel.AuditLog">
+              <MappingFragment StoreEntitySet="AuditLogs">
+                <ScalarProperty Name="AuditId" ColumnName="AuditId" />
+                <ScalarProperty Name="LoadId" ColumnName="LoadId" />
+                <ScalarProperty Name="Action" ColumnName="Action" />
+                <ScalarProperty Name="PerformedBy" ColumnName="PerformedBy" />
+                <ScalarProperty Name="Timestamp" ColumnName="Timestamp" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Customers">
+            <EntityTypeMapping TypeName="KeystoneLogisticsDBModel.Customer">
+              <MappingFragment StoreEntitySet="Customers">
+                <ScalarProperty Name="CustomerId" ColumnName="CustomerId" />
+                <ScalarProperty Name="CompanyName" ColumnName="CompanyName" />
+                <ScalarProperty Name="ContactPerson" ColumnName="ContactPerson" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+                <ScalarProperty Name="Phone" ColumnName="Phone" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Drivers">
+            <EntityTypeMapping TypeName="KeystoneLogisticsDBModel.Driver">
+              <MappingFragment StoreEntitySet="Drivers">
+                <ScalarProperty Name="DriverId" ColumnName="DriverId" />
+                <ScalarProperty Name="FullName" ColumnName="FullName" />
+                <ScalarProperty Name="Phone" ColumnName="Phone" />
+                <ScalarProperty Name="VehicleRegistration" ColumnName="VehicleRegistration" />
+                <ScalarProperty Name="IsAvailable" ColumnName="IsAvailable" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Loads">
+            <EntityTypeMapping TypeName="KeystoneLogisticsDBModel.Load">
+              <MappingFragment StoreEntitySet="Loads">
+                <ScalarProperty Name="LoadId" ColumnName="LoadId" />
+                <ScalarProperty Name="TrackingNumber" ColumnName="TrackingNumber" />
+                <ScalarProperty Name="CustomerId" ColumnName="CustomerId" />
+                <ScalarProperty Name="DriverId" ColumnName="DriverId" />
+                <ScalarProperty Name="PickupLocation" ColumnName="PickupLocation" />
+                <ScalarProperty Name="DropoffLocation" ColumnName="DropoffLocation" />
+                <ScalarProperty Name="CargoDescription" ColumnName="CargoDescription" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="DispatchedDate" ColumnName="DispatchedDate" />
+                <ScalarProperty Name="DeliveredDate" ColumnName="DeliveredDate" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="PODDocuments">
+            <EntityTypeMapping TypeName="KeystoneLogisticsDBModel.PODDocument">
+              <MappingFragment StoreEntitySet="PODDocuments">
+                <ScalarProperty Name="PODId" ColumnName="PODId" />
+                <ScalarProperty Name="LoadId" ColumnName="LoadId" />
+                <ScalarProperty Name="FilePath" ColumnName="FilePath" />
+                <ScalarProperty Name="UploadedAt" ColumnName="UploadedAt" />
+                <ScalarProperty Name="Notes" ColumnName="Notes" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="true" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>
