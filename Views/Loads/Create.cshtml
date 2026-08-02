@@ -1,104 +1,76 @@
 ﻿@model KeystoneLogistics.Models.Load
 
 @{
-    ViewBag.Title = "Create";
+    ViewBag.Title = "Create Freight Load";
 }
 
-<h2>Create</h2>
-
-
-@using (Html.BeginForm()) 
-{
-    @Html.AntiForgeryToken()
-    
-    <div class="form-horizontal">
-        <h4>Load</h4>
-        <hr />
-        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-        <div class="form-group">
-            @Html.LabelFor(model => model.TrackingNumber, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.TrackingNumber, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.TrackingNumber, "", new { @class = "text-danger" })
-            </div>
+<div class="container mt-4" style="max-width: 900px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="font-weight-bold mb-1">Create New Freight Load</h2>
+            <p class="text-muted mb-0">Register a new shipment profile and assign route details</p>
         </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.CustomerId, "CustomerId", htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.DropDownList("CustomerId", null, htmlAttributes: new { @class = "form-control" })
-                @Html.ValidationMessageFor(model => model.CustomerId, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.DriverId, "DriverId", htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.DropDownList("DriverId", null, htmlAttributes: new { @class = "form-control" })
-                @Html.ValidationMessageFor(model => model.DriverId, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.PickupLocation, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.PickupLocation, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.PickupLocation, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.DropoffLocation, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.DropoffLocation, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.DropoffLocation, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.CargoDescription, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.CargoDescription, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.CargoDescription, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.Status, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.Status, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.Status, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.DispatchedDate, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.DispatchedDate, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.DispatchedDate, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.DeliveredDate, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.DeliveredDate, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.DeliveredDate, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group">
-            <div class="col-md-offset-2 col-md-10">
-                <input type="submit" value="Create" class="btn btn-default" />
-            </div>
-        </div>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary font-weight-bold px-3 py-2" style="border-radius: 8px;">
+            <i class="fa-solid fa-arrow-left mr-1"></i> Back to Loads
+        </a>
     </div>
-}
 
-<div>
-    @Html.ActionLink("Back to List", "Index")
+    <div class="form-card">
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
+
+            <div class="form-row">
+                <div class="form-group col-md-6 mb-3">
+                    <label class="font-weight-bold text-dark">Tracking Number</label>
+                    @Html.EditorFor(model => model.TrackingNumber, new { htmlAttributes = new { @class = "form-control form-control-custom", @placeholder = "e.g. KL-2026-005" } })
+                    @Html.ValidationMessageFor(model => model.TrackingNumber, "", new { @class = "text-danger small" })
+                </div>
+
+                <div class="form-group col-md-6 mb-3">
+                    <label class="font-weight-bold text-dark">Customer</label>
+                    @Html.DropDownList("CustomerId", null, htmlAttributes: new { @class = "form-control form-control-custom" })
+                    @Html.ValidationMessageFor(model => model.CustomerId, "", new { @class = "text-danger small" })
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-6 mb-3">
+                    <label class="font-weight-bold text-dark">Assigned Driver</label>
+                    @Html.DropDownList("DriverId", null, htmlAttributes: new { @class = "form-control form-control-custom" })
+                    @Html.ValidationMessageFor(model => model.DriverId, "", new { @class = "text-danger small" })
+                </div>
+
+                <div class="form-group col-md-6 mb-3">
+                    <label class="font-weight-bold text-dark">Shipment Status</label>
+                    @Html.DropDownListFor(model => model.Status, new SelectList(new[] { "Dispatched", "En Route", "Delivered" }), "Select Status", new { @class = "form-control form-control-custom" })
+                    @Html.ValidationMessageFor(model => model.Status, "", new { @class = "text-danger small" })
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-6 mb-3">
+                    <label class="font-weight-bold text-dark">Pickup Location</label>
+                    @Html.EditorFor(model => model.PickupLocation, new { htmlAttributes = new { @class = "form-control form-control-custom", @placeholder = "Origin facility/warehouse" } })
+                    @Html.ValidationMessageFor(model => model.PickupLocation, "", new { @class = "text-danger small" })
+                </div>
+
+                <div class="form-group col-md-6 mb-3">
+                    <label class="font-weight-bold text-dark">Dropoff Destination</label>
+                    @Html.EditorFor(model => model.DropoffLocation, new { htmlAttributes = new { @class = "form-control form-control-custom", @placeholder = "Destination facility" } })
+                    @Html.ValidationMessageFor(model => model.DropoffLocation, "", new { @class = "text-danger small" })
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <div class="d-flex justify-content-end">
+                <a href="@Url.Action("Index")" class="btn btn-light font-weight-bold mr-2 px-4 py-2" style="border-radius: 8px;">Cancel</a>
+                <button type="submit" class="btn btn-primary font-weight-bold px-4 py-2" style="border-radius: 8px;">
+                    <i class="fa-solid fa-floppy-disk mr-1"></i> Save Freight Load
+                </button>
+            </div>
+        }
+    </div>
 </div>
-
-@section Scripts {
-    @Scripts.Render("~/bundles/jqueryval")
-}

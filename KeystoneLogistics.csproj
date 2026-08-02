@@ -142,6 +142,7 @@
     <Compile Include="Models\Customer.cs">
       <DependentUpon>KeystoneLogisticsDB.tt</DependentUpon>
     </Compile>
+    <Compile Include="Models\DashboardViewModel.cs" />
     <Compile Include="Models\Driver.cs">
       <DependentUpon>KeystoneLogisticsDB.tt</DependentUpon>
     </Compile>
@@ -245,14 +246,12 @@
     <Content Include="Views\Customers\Delete.cshtml" />
     <Content Include="Views\Customers\Details.cshtml" />
     <Content Include="Views\Customers\Edit.cshtml" />
-    <Content Include="..\..\KeyStoneAppdev\Index.cshtml">
-      <Link>Views\Customers\Index.cshtml</Link>
-    </Content>
     <Content Include="Views\Drivers\Create.cshtml" />
     <Content Include="Views\Drivers\Delete.cshtml" />
     <Content Include="Views\Drivers\Details.cshtml" />
     <Content Include="Views\Drivers\Edit.cshtml" />
     <Content Include="Views\Drivers\Index.cshtml" />
+    <Content Include="Views\Customers\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

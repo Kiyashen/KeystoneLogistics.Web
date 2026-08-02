@@ -1,33 +1,277 @@
 ﻿@{
-    ViewBag.Title = "Home Page";
+    ViewBag.Title = "Home";
 }
 
-<main>
-    <section class="row" aria-labelledby="aspnetTitle">
-        <h1 id="title">ASP.NET</h1>
-        <p class="lead">ASP.NET is a free web framework for building great Web sites and Web applications using HTML, CSS and JavaScript.</p>
-        <p><a href="https://asp.net" class="btn btn-primary btn-md">Learn more &raquo;</a></p>
-    </section>
+<style>
+    /* Neutral Hero Section with Soft Frosted Glass */
+    .hero-slate {
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 50px 0;
+    }
+
+    /* Muted Slate Icon Boxes */
+    .icon-box-glass {
+        width: 54px;
+        height: 54px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        color: #f8fafc;
+    }
+
+    /* Neutral Frosted Glass Cards */
+    .glass-card-dark {
+        background: rgba(255, 255, 255, 0.03) !important;
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+        transition: all 0.25s ease-in-out;
+        color: #f8fafc;
+    }
+
+        .glass-card-dark:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.06) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+        }
+
+    /* Glassmorphism Pop-Up Modal Styling */
+    .modal-glass .modal-content {
+        background: rgba(15, 23, 42, 0.92) !important;
+        backdrop-filter: blur(24px) saturate(200%);
+        -webkit-backdrop-filter: blur(24px) saturate(200%);
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 18px !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+        color: #f8fafc;
+    }
+
+    .modal-glass .modal-header,
+    .modal-glass .modal-footer {
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .modal-glass .close {
+        color: #94a3b8;
+        text-shadow: none;
+        opacity: 0.8;
+    }
+
+        .modal-glass .close:hover {
+            color: #ffffff;
+            opacity: 1;
+        }
+</style>
+
+<!-- Hero Section -->
+<div class="hero-slate mb-5">
+    <div class="container text-center py-2">
+        <span class="badge badge-pill px-3 py-2 mb-3" style="background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.15); font-weight: 600;">
+            <i class="fa-solid fa-satellite-dish mr-1 text-light"></i> Live Logistics Control
+        </span>
+        <h1 class="display-4 font-weight-bold text-white mb-3">Precision Freight & Fleet Solutions</h1>
+        <p class="lead mb-4 mx-auto" style="max-width: 680px; color: #cbd5e1;">
+            Streamlining commercial logistics, scheduled regional transit, and cargo tracking across primary routes.
+        </p>
+
+        <!-- Neutral Glass Search Bar -->
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-8 col-lg-6">
+                <form action="@Url.Action("Index", "Loads")" method="get" class="glass-card-dark p-2">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control border-0 bg-transparent px-3 text-white" placeholder="Enter Waybill or Load Ref (e.g. KL-2026-001)..." style="font-size: 0.95rem; height: 46px;" required>
+                        <div class="input-group-append">
+                            <button type="submit" class="btn font-weight-bold px-4 text-white" style="border-radius: 8px; background: #334155; border: 1px solid rgba(255,255,255,0.15);">
+                                <i class="fa-solid fa-magnifying-glass mr-1"></i> Track Load
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Operations Cards -->
+<div class="container py-2">
+    <div class="text-center mb-5">
+        <h2 class="font-weight-bold text-white">Operations & Capabilities</h2>
+        <p class="text-muted mx-auto" style="max-width: 600px; color: #94a3b8 !important;">
+            Click on any operational card below to view detailed specifications in a glass pop-up modal.
+        </p>
+    </div>
 
     <div class="row">
-        <section class="col-md-4" aria-labelledby="gettingStartedTitle">
-            <h2 id="gettingStartedTitle">Getting started</h2>
-            <p>
-                ASP.NET MVC gives you a powerful, patterns-based way to build dynamic websites that
-                enables a clean separation of concerns and gives you full control over markup
-                for enjoyable, agile development.
-            </p>
-            <p><a class="btn btn-outline-dark" href="https://go.microsoft.com/fwlink/?LinkId=301865">Learn more &raquo;</a></p>
-        </section>
-        <section class="col-md-4" aria-labelledby="librariesTitle">
-            <h2 id="librariesTitle">Get more libraries</h2>
-            <p>NuGet is a free Visual Studio extension that makes it easy to add, remove, and update libraries and tools in Visual Studio projects.</p>
-            <p><a class="btn btn-outline-dark" href="https://go.microsoft.com/fwlink/?LinkId=301866">Learn more &raquo;</a></p>
-        </section>
-        <section class="col-md-4" aria-labelledby="hostingTitle">
-            <h2 id="hostingTitle">Web Hosting</h2>
-            <p>You can easily find a web hosting company that offers the right mix of features and price for your applications.</p>
-            <p><a class="btn btn-outline-dark" href="https://go.microsoft.com/fwlink/?LinkId=301867">Learn more &raquo;</a></p>
-        </section>
+        <!-- Service Card 1 -->
+        <div class="col-md-4 mb-4">
+            <div class="glass-card-dark p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="icon-box-glass mb-3">
+                        <i class="fa-solid fa-boxes-packing"></i>
+                    </div>
+                    <h5 class="font-weight-bold text-white">Priority Freight Dispatch</h5>
+                    <p class="text-muted" style="color: #94a3b8 !important; font-size: 0.92rem; line-height: 1.6;">
+                        Structured dispatch for time-sensitive commercial freight and containerized cargo transfers.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-sm text-left font-weight-bold p-0 mt-3 text-light" data-toggle="modal" data-target="#dispatchModal" style="background: none; border: none;">
+                    View Dispatch Specs <i class="fa-solid fa-arrow-right ml-1 small"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Service Card 2 -->
+        <div class="col-md-4 mb-4">
+            <div class="glass-card-dark p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="icon-box-glass mb-3">
+                        <i class="fa-solid fa-truck-ramp-box"></i>
+                    </div>
+                    <h5 class="font-weight-bold text-white">Regional Commercial Fleet</h5>
+                    <p class="text-muted" style="color: #94a3b8 !important; font-size: 0.92rem; line-height: 1.6;">
+                        Dedicated fleet allocation delivering multi-stop connectivity across metro industrial hubs.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-sm text-left font-weight-bold p-0 mt-3 text-light" data-toggle="modal" data-target="#fleetModalHome" style="background: none; border: none;">
+                    View Fleet Specs <i class="fa-solid fa-arrow-right ml-1 small"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Service Card 3 -->
+        <div class="col-md-4 mb-4">
+            <div class="glass-card-dark p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="icon-box-glass mb-3">
+                        <i class="fa-solid fa-route"></i>
+                    </div>
+                    <h5 class="font-weight-bold text-white">Scheduled Corridors</h5>
+                    <p class="text-muted" style="color: #94a3b8 !important; font-size: 0.92rem; line-height: 1.6;">
+                        High-frequency line-haul operations connecting primary coastal entry points to inland depots.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-sm text-left font-weight-bold p-0 mt-3 text-light" data-toggle="modal" data-target="#corridorModal" style="background: none; border: none;">
+                    View Corridor Specs <i class="fa-solid fa-arrow-right ml-1 small"></i>
+                </button>
+            </div>
+        </div>
     </div>
-</main>
+
+    <!-- Quick Action Cards -->
+    <div class="row mt-3">
+        <div class="col-md-6 mb-4">
+            <div class="glass-card-dark p-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="font-weight-bold text-white mb-1">Manage Freight Consignments</h5>
+                    <p class="mb-0 text-muted" style="color: #94a3b8 !important;">Review pending loads, active status, and waybills.</p>
+                </div>
+                <a href="@Url.Action("Index", "Loads")" class="btn font-weight-bold px-3 py-2 text-white border-0 ml-3" style="background: #2563eb; border-radius: 8px;">
+                    Loads
+                </a>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="glass-card-dark p-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="font-weight-bold text-white mb-1">Registered Drivers & Fleet</h5>
+                    <p class="mb-0 text-muted" style="color: #94a3b8 !important;">Monitor driver allocations and active vehicles.</p>
+                </div>
+                <a href="@Url.Action("Index", "Drivers")" class="btn font-weight-bold px-3 py-2 text-white ml-3" style="background: #334155; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;">
+                    Drivers
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= GLASSMORPHISM POP-UP MODAL CARDS ================= -->
+<!-- Modal 1: Priority Dispatch -->
+<div class="modal fade modal-glass" id="dispatchModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold text-white">
+                    <i class="fa-solid fa-boxes-packing mr-2 text-muted"></i> Priority Dispatch Specs
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="color: #cbd5e1; line-height: 1.7;">
+                <p class="mb-2">Our dispatch framework ensures accurate turnarounds:</p>
+                <ul class="pl-3 mb-0">
+                    <li class="mb-2"><strong>Express Processing:</strong> Consignment intake logged within 15 minutes.</li>
+                    <li class="mb-2"><strong>Automated Manifests:</strong> Digital manifests sent directly to driver units.</li>
+                    <li class="mb-2"><strong>Real-Time Tracking:</strong> Waybill mapping available on the Freight Loads page.</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-light" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Fleet Specs -->
+<div class="modal fade modal-glass" id="fleetModalHome" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold text-white">
+                    <i class="fa-solid fa-truck-ramp-box mr-2 text-muted"></i> Commercial Fleet Overview
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="color: #cbd5e1; line-height: 1.7;">
+                <p class="mb-2">Overview of regional logistics fleet capabilities:</p>
+                <ul class="pl-3 mb-0">
+                    <li class="mb-2"><strong>Vehicle Tracking:</strong> Active satellite telemetry installed across all haulage units.</li>
+                    <li class="mb-2"><strong>Driver Profiles:</strong> Licensing, ratings, and phone logs stored securely.</li>
+                    <li class="mb-2"><strong>Capacity Range:</strong> LCVs up to heavy tri-axle cargo rigs.</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-light" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: Corridor Operations -->
+<div class="modal fade modal-glass" id="corridorModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold text-white">
+                    <i class="fa-solid fa-route mr-2 text-muted"></i> Active Transit Corridors
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="color: #cbd5e1; line-height: 1.7;">
+                <p class="mb-2">Scheduled daily line-haul routes with digital chain of custody:</p>
+                <ul class="pl-3 mb-0">
+                    <li class="mb-2"><strong>N3 Highway Corridor:</strong> Port of Durban to Pietermaritzburg & inland hubs.</li>
+                    <li class="mb-2"><strong>Coastal Industrial Belts:</strong> Direct port transfers and container yard routing.</li>
+                    <li class="mb-2"><strong>Scheduled Departure Windows:</strong> Fixed daily departure slots.</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-light" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

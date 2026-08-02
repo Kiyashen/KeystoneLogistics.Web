@@ -1,81 +1,93 @@
-﻿@model IEnumerable<KeystoneLogistics.Models.Load>
-
+﻿@model IEnumerable<dynamic>
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "Freight Loads";
 }
 
-<h2>Index</h2>
+<div class="container">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="page-heading">Freight Loads Management</h1>
+            <p class="page-subtitle">Track and manage active cargo shipments across logistics routes</p>
+        </div>
+        <a href="@Url.Action("Create", "Loads")" class="btn btn-primary font-weight-bold px-4 py-2" style="background-color: #2563eb; border: none; border-radius: 8px;">
+            <i class="fa-solid fa-plus mr-1"></i> Create New Load
+        </a>
+    </div>
 
-<p>
-    @Html.ActionLink("Create New", "Create")
-</p>
-<table class="table">
-    <tr>
-        <th>
-            @Html.DisplayNameFor(model => model.TrackingNumber)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.PickupLocation)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.DropoffLocation)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.CargoDescription)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Status)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.DispatchedDate)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.DeliveredDate)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Customer.CompanyName)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Driver.FullName)
-        </th>
-        <th></th>
-    </tr>
+    <!-- Data Card Container -->
+    <div class="data-card">
+        <!-- Search and Filter Bar -->
+        <div class="row mb-4">
+            <div class="col-md-8 mb-2 mb-md-0">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-light border-right-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                    </div>
+                    <input type="text" class="form-control border-left-0 bg-light" placeholder="Search tracking #, customer, driver, or destination...">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select class="form-control bg-light">
+                    <option value="">All Statuses</option>
+                    <option value="Dispatched">Dispatched</option>
+                    <option value="In Transit">In Transit</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Pending">Pending</option>
+                </select>
+            </div>
+        </div>
 
-@foreach (var item in Model) {
-    <tr>
-        <td>
-            @Html.DisplayFor(modelItem => item.TrackingNumber)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.PickupLocation)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.DropoffLocation)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.CargoDescription)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Status)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.DispatchedDate)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.DeliveredDate)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Customer.CompanyName)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Driver.FullName)
-        </td>
-        <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.LoadId }) |
-            @Html.ActionLink("Details", "Details", new { id=item.LoadId }) |
-            @Html.ActionLink("Delete", "Delete", new { id=item.LoadId })
-        </td>
-    </tr>
-}
-
-</table>
+        <!-- Table -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="color: #1e293b;">
+                <thead style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                    <tr>
+                        <th class="font-weight-bold border-0">Tracking #</th>
+                        <th class="font-weight-bold border-0">Customer</th>
+                        <th class="font-weight-bold border-0">Driver</th>
+                        <th class="font-weight-bold border-0">Pickup Location</th>
+                        <th class="font-weight-bold border-0">Dropoff Destination</th>
+                        <th class="font-weight-bold border-0">Status</th>
+                        <th class="font-weight-bold border-0 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="font-weight-bold text-primary">KL-2026-001</td>
+                        <td>Apex Freight SA</td>
+                        <td>Sipho Naidoo</td>
+                        <td>Maydon Wharf Gate 4</td>
+                        <td>Hammarsdale Industrial Park</td>
+                        <td><span class="badge badge-pill badge-primary px-3 py-2">Dispatched</span></td>
+                        <td class="text-right">
+                            <a href="#" class="btn btn-sm btn-light border font-weight-bold">Details</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold text-primary">KL-2026-002</td>
+                        <td>KZN Haulage Ltd</td>
+                        <td>Thabo Mokoena</td>
+                        <td>Durban Container Terminal</td>
+                        <td>Pietermaritzburg Depot</td>
+                        <td><span class="badge badge-pill badge-warning px-3 py-2 text-dark">In Transit</span></td>
+                        <td class="text-right">
+                            <a href="#" class="btn btn-sm btn-light border font-weight-bold">Details</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold text-primary">KL-2026-003</td>
+                        <td>Coastal Trading Co</td>
+                        <td>Johan Botha</td>
+                        <td>Bayhead Logistics Hub</td>
+                        <td>Richards Bay Port</td>
+                        <td><span class="badge badge-pill badge-success px-3 py-2">Delivered</span></td>
+                        <td class="text-right">
+                            <a href="#" class="btn btn-sm btn-light border font-weight-bold">Details</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

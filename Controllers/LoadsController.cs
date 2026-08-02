@@ -28,7 +28,7 @@ namespace KeystoneLogistics.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Load load = db.Loads.Find(id);
+            Load load = db.Loads.Include(l => l.Customer).Include(l => l.Driver).FirstOrDefault(l => l.LoadId == id);
             if (load == null)
             {
                 return HttpNotFound();
@@ -45,8 +45,6 @@ namespace KeystoneLogistics.Controllers
         }
 
         // POST: Loads/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Create([Bind(Include = "LoadId,TrackingNumber,CustomerId,DriverId,PickupLocation,DropoffLocation,CargoDescription,Status,DispatchedDate,DeliveredDate")] Load load)
@@ -55,6 +53,8 @@ namespace KeystoneLogistics.Controllers
             {
                 db.Loads.Add(load);
                 db.SaveChanges();
+
+                TempData["SuccessMessage"] = $"Load {load.TrackingNumber} was successfully created!";
                 return RedirectToAction("Index");
             }
 
@@ -81,8 +81,6 @@ namespace KeystoneLogistics.Controllers
         }
 
         // POST: Loads/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Edit([Bind(Include = "LoadId,TrackingNumber,CustomerId,DriverId,PickupLocation,DropoffLocation,CargoDescription,Status,DispatchedDate,DeliveredDate")] Load load)
@@ -91,6 +89,8 @@ namespace KeystoneLogistics.Controllers
             {
                 db.Entry(load).State = EntityState.Modified;
                 db.SaveChanges();
+
+                TempData["SuccessMessage"] = $"Load {load.TrackingNumber} was successfully updated!";
                 return RedirectToAction("Index");
             }
             ViewBag.CustomerId = new SelectList(db.Customers, "CustomerId", "CompanyName", load.CustomerId);
@@ -105,7 +105,7 @@ namespace KeystoneLogistics.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Load load = db.Loads.Find(id);
+            Load load = db.Loads.Include(l => l.Customer).Include(l => l.Driver).FirstOrDefault(l => l.LoadId == id);
             if (load == null)
             {
                 return HttpNotFound();
@@ -119,8 +119,14 @@ namespace KeystoneLogistics.Controllers
         public ActionResult DeleteConfirmed(int id)
         {
             Load load = db.Loads.Find(id);
-            db.Loads.Remove(load);
-            db.SaveChanges();
+            if (load != null)
+            {
+                string trackingNumber = load.TrackingNumber;
+                db.Loads.Remove(load);
+                db.SaveChanges();
+
+                TempData["SuccessMessage"] = $"Load {trackingNumber} was successfully deleted!";
+            }
             return RedirectToAction("Index");
         }
 

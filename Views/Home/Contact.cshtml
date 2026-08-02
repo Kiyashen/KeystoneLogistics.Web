@@ -1,19 +1,52 @@
 ﻿@{
-    ViewBag.Title = "Contact";
+    ViewBag.Title = "Contact & Operations Support";
 }
-<main aria-labelledby="title">
-    <h2 id="title">@ViewBag.Title.</h2>
-    <h3>@ViewBag.Message</h3>
 
-    <address>
-        One Microsoft Way<br />
-        Redmond, WA 98052-6399<br />
-        <abbr title="Phone">P:</abbr>
-        425.555.0100
-    </address>
+<div class="container mt-4" style="max-width: 1000px;">
+    <div class="mb-4">
+        <h2 class="font-weight-bold mb-1">Logistics Support Center</h2>
+        <p class="text-muted">Get in touch with dispatch, operations control, or fleet support</p>
+    </div>
 
-    <address>
-        <strong>Support:</strong>   <a href="mailto:Support@example.com">Support@example.com</a><br />
-        <strong>Marketing:</strong> <a href="mailto:Marketing@example.com">Marketing@example.com</a>
-    </address>
-</main>
+    <div class="row">
+        <!-- Contact Cards -->
+        <div class="col-md-5 mb-4">
+            <div class="form-card mb-3">
+                <h5 class="font-weight-bold mb-3"><i class="fa-solid fa-building text-primary mr-2"></i>Headquarters</h5>
+                <p class="mb-1 text-secondary"><strong>Keystone Logistics Hub</strong></p>
+                <p class="text-muted mb-0">Hammarsdale Industrial Zone, KZN</p>
+            </div>
+
+            <div class="form-card mb-3">
+                <h5 class="font-weight-bold mb-3"><i class="fa-solid fa-headset text-primary mr-2"></i>Direct Dispatch Lines</h5>
+                <p class="mb-1"><strong>Phone:</strong> +27 (0)31 500 1234</p>
+                <p class="mb-1"><strong>Emergency Line:</strong> 0800 539 786</p>
+                <p class="mb-0"><strong>Email:</strong> support@keystonelogistics.co.za</p>
+            </div>
+        </div>
+
+        <!-- Contact Form Card -->
+        <div class="col-md-7 mb-4">
+            <div class="form-card">
+                <h5 class="font-weight-bold mb-3">Send Dispatch Support Inquiry</h5>
+                <form>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small">Your Name</label>
+                        <input type="text" class="form-control form-control-custom" placeholder="Full name" />
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small">Email Address</label>
+                        <input type="email" class="form-control form-control-custom" placeholder="name@company.co.za" />
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small">Message / Inquiry</label>
+                        <textarea class="form-control form-control-custom" rows="4" placeholder="Describe the operational request or issue..."></textarea>
+                    </div>
+                    <button type="button" class="btn btn-primary font-weight-bold btn-block py-2" style="border-radius: 8px;">
+                        Submit Inquiry
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

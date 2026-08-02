@@ -1,51 +1,77 @@
 ﻿@model IEnumerable<KeystoneLogistics.Models.Customer>
 
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "Registered Customers";
 }
 
-<h2>Index</h2>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="page-heading">Registered Customers</h2>
+            <p class="page-subtitle mb-0">Manage customer accounts and contact details</p>
+        </div>
+        <a href="@Url.Action("Create")" class="btn btn-primary font-weight-bold px-3 py-2" style="border-radius: 8px;">
+            <i class="fa-solid fa-plus mr-1"></i> Add New Customer
+        </a>
+    </div>
 
-<p>
-    @Html.ActionLink("Create New", "Create")
-</p>
-<table class="table">
-    <tr>
-        <th>
-            @Html.DisplayNameFor(model => model.CompanyName)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.ContactPerson)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Email)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Phone)
-        </th>
-        <th></th>
-    </tr>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i class="fa-solid fa-circle-check mr-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
 
-@foreach (var item in Model) {
-    <tr>
-        <td>
-            @Html.DisplayFor(modelItem => item.CompanyName)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.ContactPerson)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Email)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Phone)
-        </td>
-        <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.CustomerId }) |
-            @Html.ActionLink("Details", "Details", new { id=item.CustomerId }) |
-            @Html.ActionLink("Delete", "Delete", new { id=item.CustomerId })
-        </td>
-    </tr>
-}
-
-</table>
+    <div class="data-card p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th class="py-3 px-4">Company Name</th>
+                        <th class="py-3 px-4">Contact Person</th>
+                        <th class="py-3 px-4">Phone Number</th>
+                        <th class="py-3 px-4">Email</th>
+                        <th class="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-users-slash fa-2x mb-2 d-block"></i>
+                                No customer records found.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="py-3 px-4 font-weight-bold text-dark">@item.CompanyName</td>
+                                <td class="py-3 px-4 text-secondary">@item.ContactPerson</td>
+                                <td class="py-3 px-4 text-secondary">@item.Phone</td>
+                                <td class="py-3 px-4 text-secondary">@item.Email</td>
+                                <td class="py-3 px-4 text-right">
+                                    <a href="@Url.Action("Edit", new { id = item.CustomerId })" class="btn btn-sm btn-outline-secondary mr-1" title="Edit">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <a href="@Url.Action("Details", new { id = item.CustomerId })" class="btn btn-sm btn-outline-info mr-1" title="Details">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                    <a href="@Url.Action("Delete", new { id = item.CustomerId })" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
