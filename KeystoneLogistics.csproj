@@ -212,6 +212,7 @@
     <Content Include="Models\KeystoneLogisticsDB.edmx.diagram">
       <DependentUpon>KeystoneLogisticsDB.edmx</DependentUpon>
     </Content>
+    <Content Include="Content\models\van.glb" />
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
     <Content Include="Scripts\jquery-3.7.0.min.js" />

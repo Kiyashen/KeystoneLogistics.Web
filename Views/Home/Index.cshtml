@@ -3,275 +3,520 @@
 }
 
 <style>
-    /* Neutral Hero Section with Soft Frosted Glass */
-    .hero-slate {
-        background: rgba(255, 255, 255, 0.02);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        padding: 50px 0;
+    /* Hero container allowing page scroll */
+    .hero-wrapper {
+        position: relative;
+        width: 100%;
+        height: 350vh;
+        /* Studio Radial Gradient Backdrop: Light slate center transitioning to deep charcoal */
+        background: radial-gradient(circle at 50% 45%, #1e293b 0%, #0f172a 60%, #0b1120 100%);
     }
 
-    /* Muted Slate Icon Boxes */
-    .icon-box-glass {
-        width: 54px;
-        height: 54px;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.06);
+    #canvas-container {
+        position: sticky;
+        top: 0;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    #loading-screen {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #e2e8f0;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        z-index: 10;
+    }
+
+    /* Professional Glassmorphism Cards */
+    .card-overlay {
+        position: fixed;
+        top: 45%;
+        width: 410px;
+        padding: 30px;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        color: #ffffff;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0.6s ease;
+        z-index: 5;
+        transform-style: preserve-3d;
+        perspective: 1000px;
+    }
+
+    /* Active Spring States */
+    .card-left {
+        left: 5%;
+        transform: translateY(-50%) translateX(-140px) scale(0.6) rotateY(30deg) rotateX(-15deg);
+    }
+
+        .card-left.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(-50%) translateX(0) scale(1) rotateY(0deg) rotateX(0deg);
+            animation: floatAnim 4s ease-in-out 0.8s infinite alternate;
+        }
+
+    .card-right {
+        right: 5%;
+        transform: translateY(-50%) translateX(140px) scale(0.6) rotateY(-30deg) rotateX(-15deg);
+    }
+
+        .card-right.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(-50%) translateX(0) scale(1) rotateY(0deg) rotateX(0deg);
+            animation: floatAnim 4s ease-in-out 0.8s infinite alternate;
+        }
+
+    /* Subtle Studio Accent Top Line */
+    .card-overlay::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 10%;
+        right: 10%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.6), transparent);
+        border-radius: 2px;
+    }
+
+    /* Card Header Layout */
+    .card-header-flex {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    .card-badge {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.35rem;
+        font-size: 22px;
+    }
+
+    .card-tag {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #38bdf8;
+        background: rgba(56, 189, 248, 0.1);
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    .card-title {
+        font-size: 24px;
+        font-weight: 700;
         color: #f8fafc;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
     }
 
-    /* Neutral Frosted Glass Cards */
-    .glass-card-dark {
-        background: rgba(255, 255, 255, 0.03) !important;
-        backdrop-filter: blur(16px) saturate(180%);
-        -webkit-backdrop-filter: blur(16px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 14px !important;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
-        transition: all 0.25s ease-in-out;
-        color: #f8fafc;
-    }
-
-        .glass-card-dark:hover {
-            transform: translateY(-4px);
-            background: rgba(255, 255, 255, 0.06) !important;
-            border-color: rgba(255, 255, 255, 0.2) !important;
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
-        }
-
-    /* Glassmorphism Pop-Up Modal Styling */
-    .modal-glass .modal-content {
-        background: rgba(15, 23, 42, 0.92) !important;
-        backdrop-filter: blur(24px) saturate(200%);
-        -webkit-backdrop-filter: blur(24px) saturate(200%);
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        border-radius: 18px !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
-        color: #f8fafc;
-    }
-
-    .modal-glass .modal-header,
-    .modal-glass .modal-footer {
-        border-color: rgba(255, 255, 255, 0.08);
-    }
-
-    .modal-glass .close {
+    .card-desc {
+        font-size: 13.5px;
         color: #94a3b8;
-        text-shadow: none;
-        opacity: 0.8;
+        line-height: 1.6;
+        margin-bottom: 20px;
     }
 
-        .modal-glass .close:hover {
-            color: #ffffff;
-            opacity: 1;
+    /* Spec Data Grid */
+    .spec-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 16px;
+    }
+
+    .spec-item {
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 10px 14px;
+        border-radius: 10px;
+    }
+
+    .spec-label {
+        font-size: 11px;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        margin-bottom: 3px;
+    }
+
+    .spec-value {
+        font-size: 15px;
+        font-weight: 700;
+        color: #f8fafc;
+    }
+
+        .spec-value.highlight {
+            color: #38bdf8;
         }
+
+    /* Scroll Navigation Dots */
+    .scroll-nav {
+        position: fixed;
+        right: 25px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        z-index: 10;
+        transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+
+    .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.4s ease;
+        cursor: pointer;
+    }
+
+        .dot.active {
+            height: 28px;
+            border-radius: 10px;
+            background: #38bdf8;
+        }
+
+    @@keyframes floatAnim {
+        0% {
+            transform: translateY(-50%) translateY(0px);
+        }
+
+        100% {
+            transform: translateY(-50%) translateY(-10px);
+        }
+    }
 </style>
 
-<!-- Hero Section -->
-<div class="hero-slate mb-5">
-    <div class="container text-center py-2">
-        <span class="badge badge-pill px-3 py-2 mb-3" style="background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.15); font-weight: 600;">
-            <i class="fa-solid fa-satellite-dish mr-1 text-light"></i> Live Logistics Control
-        </span>
-        <h1 class="display-4 font-weight-bold text-white mb-3">Precision Freight & Fleet Solutions</h1>
-        <p class="lead mb-4 mx-auto" style="max-width: 680px; color: #cbd5e1;">
-            Streamlining commercial logistics, scheduled regional transit, and cargo tracking across primary routes.
-        </p>
+<div class="hero-wrapper" id="scroll-wrapper">
+    <div id="canvas-container">
+        <div id="loading-screen">LOADING SHOWROOM...</div>
 
-        <!-- Neutral Glass Search Bar -->
-        <div class="row justify-content-center mt-4">
-            <div class="col-md-8 col-lg-6">
-                <form action="@Url.Action("Index", "Loads")" method="get" class="glass-card-dark p-2">
-                    <div class="input-group">
-                        <input type="text" name="search" class="form-control border-0 bg-transparent px-3 text-white" placeholder="Enter Waybill or Load Ref (e.g. KL-2026-001)..." style="font-size: 0.95rem; height: 46px;" required>
-                        <div class="input-group-append">
-                            <button type="submit" class="btn font-weight-bold px-4 text-white" style="border-radius: 8px; background: #334155; border: 1px solid rgba(255,255,255,0.15);">
-                                <i class="fa-solid fa-magnifying-glass mr-1"></i> Track Load
-                            </button>
-                        </div>
-                    </div>
-                </form>
+        <!-- Scroll Dots -->
+        <div class="scroll-nav" id="scroll-nav">
+            <div class="dot active" data-index="0"></div>
+            <div class="dot" data-index="1"></div>
+            <div class="dot" data-index="2"></div>
+        </div>
+
+        <!-- Card 1: Express Logistics Fleet -->
+        <div class="card-overlay card-left" id="card-1">
+            <div class="card-header-flex">
+                <div class="card-badge">🚚</div>
+                <div class="card-tag">FLEET METRICS</div>
+            </div>
+            <div class="card-title">Express Logistics Fleet</div>
+            <div class="card-desc">High-capacity cargo vehicles engineered for optimal payload distribution and rapid regional delivery.</div>
+            <div class="spec-grid">
+                <div class="spec-item">
+                    <div class="spec-label">Max Payload</div>
+                    <div class="spec-value highlight">1.8 Tons</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Range</div>
+                    <div class="spec-value">850 km</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Service Type</div>
+                    <div class="spec-value">Express 1:1</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Dispatch Time</div>
+                    <div class="spec-value highlight">&lt; 30 Mins</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Telematics Core -->
+        <div class="card-overlay card-right" id="card-2">
+            <div class="card-header-flex">
+                <div class="card-badge">📡</div>
+                <div class="card-tag">TELEMATICS CORE</div>
+            </div>
+            <div class="card-title">Live Telematics System</div>
+            <div class="card-desc">Real-time satellite tracking, automated dispatch updates, and smart driver route optimization delivered live.</div>
+            <div class="spec-grid">
+                <div class="spec-item">
+                    <div class="spec-label">Ping Latency</div>
+                    <div class="spec-value highlight">&lt; 50 ms</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">GPS Precision</div>
+                    <div class="spec-value">0.5 Meters</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">System Uptime</div>
+                    <div class="spec-value">99.99%</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">AI Dispatch</div>
+                    <div class="spec-value highlight">Active</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Secure Containment -->
+        <div class="card-overlay card-left" id="card-3">
+            <div class="card-header-flex">
+                <div class="card-badge">🛡️</div>
+                <div class="card-tag">CARGO PROTECTION</div>
+            </div>
+            <div class="card-title">Secure Goods Vault</div>
+            <div class="card-desc">Climate-stabilized interior compartments with dual biometric locks and real-time vault status tracking.</div>
+            <div class="spec-grid">
+                <div class="spec-item">
+                    <div class="spec-label">Temp Control</div>
+                    <div class="spec-value highlight">-20°C to +15°C</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Lock System</div>
+                    <div class="spec-value">RFID / Bio</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Security Tier</div>
+                    <div class="spec-value">Grade AAA</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Incident Rate</div>
+                    <div class="spec-value highlight">0.00%</div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Interactive Operations Cards -->
-<div class="container py-2">
-    <div class="text-center mb-5">
-        <h2 class="font-weight-bold text-white">Operations & Capabilities</h2>
-        <p class="text-muted mx-auto" style="max-width: 600px; color: #94a3b8 !important;">
-            Click on any operational card below to view detailed specifications in a glass pop-up modal.
-        </p>
-    </div>
+<!-- Three.js Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
-    <div class="row">
-        <!-- Service Card 1 -->
-        <div class="col-md-4 mb-4">
-            <div class="glass-card-dark p-4 h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <div class="icon-box-glass mb-3">
-                        <i class="fa-solid fa-boxes-packing"></i>
-                    </div>
-                    <h5 class="font-weight-bold text-white">Priority Freight Dispatch</h5>
-                    <p class="text-muted" style="color: #94a3b8 !important; font-size: 0.92rem; line-height: 1.6;">
-                        Structured dispatch for time-sensitive commercial freight and containerized cargo transfers.
-                    </p>
-                </div>
-                <button type="button" class="btn btn-sm text-left font-weight-bold p-0 mt-3 text-light" data-toggle="modal" data-target="#dispatchModal" style="background: none; border: none;">
-                    View Dispatch Specs <i class="fa-solid fa-arrow-right ml-1 small"></i>
-                </button>
-            </div>
-        </div>
+<script>
+    const container = document.getElementById('canvas-container');
+    const loadingScreen = document.getElementById('loading-screen');
+    const scrollWrapper = document.getElementById('scroll-wrapper');
+    const scrollNav = document.getElementById('scroll-nav');
 
-        <!-- Service Card 2 -->
-        <div class="col-md-4 mb-4">
-            <div class="glass-card-dark p-4 h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <div class="icon-box-glass mb-3">
-                        <i class="fa-solid fa-truck-ramp-box"></i>
-                    </div>
-                    <h5 class="font-weight-bold text-white">Regional Commercial Fleet</h5>
-                    <p class="text-muted" style="color: #94a3b8 !important; font-size: 0.92rem; line-height: 1.6;">
-                        Dedicated fleet allocation delivering multi-stop connectivity across metro industrial hubs.
-                    </p>
-                </div>
-                <button type="button" class="btn btn-sm text-left font-weight-bold p-0 mt-3 text-light" data-toggle="modal" data-target="#fleetModalHome" style="background: none; border: none;">
-                    View Fleet Specs <i class="fa-solid fa-arrow-right ml-1 small"></i>
-                </button>
-            </div>
-        </div>
+    // 1. Transparent Scene Setup (Using CSS Radial Gradient Behind Canvas)
+    const scene = new THREE.Scene();
 
-        <!-- Service Card 3 -->
-        <div class="col-md-4 mb-4">
-            <div class="glass-card-dark p-4 h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <div class="icon-box-glass mb-3">
-                        <i class="fa-solid fa-route"></i>
-                    </div>
-                    <h5 class="font-weight-bold text-white">Scheduled Corridors</h5>
-                    <p class="text-muted" style="color: #94a3b8 !important; font-size: 0.92rem; line-height: 1.6;">
-                        High-frequency line-haul operations connecting primary coastal entry points to inland depots.
-                    </p>
-                </div>
-                <button type="button" class="btn btn-sm text-left font-weight-bold p-0 mt-3 text-light" data-toggle="modal" data-target="#corridorModal" style="background: none; border: none;">
-                    View Corridor Specs <i class="fa-solid fa-arrow-right ml-1 small"></i>
-                </button>
-            </div>
-        </div>
-    </div>
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
 
-    <!-- Quick Action Cards -->
-    <div class="row mt-3">
-        <div class="col-md-6 mb-4">
-            <div class="glass-card-dark p-4 d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="font-weight-bold text-white mb-1">Manage Freight Consignments</h5>
-                    <p class="mb-0 text-muted" style="color: #94a3b8 !important;">Review pending loads, active status, and waybills.</p>
-                </div>
-                <a href="@Url.Action("Index", "Loads")" class="btn font-weight-bold px-3 py-2 text-white border-0 ml-3" style="background: #2563eb; border-radius: 8px;">
-                    Loads
-                </a>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="glass-card-dark p-4 d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="font-weight-bold text-white mb-1">Registered Drivers & Fleet</h5>
-                    <p class="mb-0 text-muted" style="color: #94a3b8 !important;">Monitor driver allocations and active vehicles.</p>
-                </div>
-                <a href="@Url.Action("Index", "Drivers")" class="btn font-weight-bold px-3 py-2 text-white ml-3" style="background: #334155; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;">
-                    Drivers
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+    let currentCamPos = new THREE.Vector3(3.4, 1.1, 4.2);
+    let targetCamPos = new THREE.Vector3(3.4, 1.1, 4.2);
+    let currentLookAt = new THREE.Vector3(0.2, 0.5, 0.2);
+    let targetLookAt = new THREE.Vector3(0.2, 0.5, 0.2);
 
-<!-- ================= GLASSMORPHISM POP-UP MODAL CARDS ================= -->
-<!-- Modal 1: Priority Dispatch -->
-<div class="modal fade modal-glass" id="dispatchModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title font-weight-bold text-white">
-                    <i class="fa-solid fa-boxes-packing mr-2 text-muted"></i> Priority Dispatch Specs
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" style="color: #cbd5e1; line-height: 1.7;">
-                <p class="mb-2">Our dispatch framework ensures accurate turnarounds:</p>
-                <ul class="pl-3 mb-0">
-                    <li class="mb-2"><strong>Express Processing:</strong> Consignment intake logged within 15 minutes.</li>
-                    <li class="mb-2"><strong>Automated Manifests:</strong> Digital manifests sent directly to driver units.</li>
-                    <li class="mb-2"><strong>Real-Time Tracking:</strong> Waybill mapping available on the Freight Loads page.</li>
-                </ul>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-sm btn-outline-light" data-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
+    camera.position.copy(currentCamPos);
+    camera.lookAt(currentLookAt);
 
-<!-- Modal 2: Fleet Specs -->
-<div class="modal fade modal-glass" id="fleetModalHome" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title font-weight-bold text-white">
-                    <i class="fa-solid fa-truck-ramp-box mr-2 text-muted"></i> Commercial Fleet Overview
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" style="color: #cbd5e1; line-height: 1.7;">
-                <p class="mb-2">Overview of regional logistics fleet capabilities:</p>
-                <ul class="pl-3 mb-0">
-                    <li class="mb-2"><strong>Vehicle Tracking:</strong> Active satellite telemetry installed across all haulage units.</li>
-                    <li class="mb-2"><strong>Driver Profiles:</strong> Licensing, ratings, and phone logs stored securely.</li>
-                    <li class="mb-2"><strong>Capacity Range:</strong> LCVs up to heavy tri-axle cargo rigs.</li>
-                </ul>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-sm btn-outline-light" data-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
 
-<!-- Modal 3: Corridor Operations -->
-<div class="modal fade modal-glass" id="corridorModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title font-weight-bold text-white">
-                    <i class="fa-solid fa-route mr-2 text-muted"></i> Active Transit Corridors
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" style="color: #cbd5e1; line-height: 1.7;">
-                <p class="mb-2">Scheduled daily line-haul routes with digital chain of custody:</p>
-                <ul class="pl-3 mb-0">
-                    <li class="mb-2"><strong>N3 Highway Corridor:</strong> Port of Durban to Pietermaritzburg & inland hubs.</li>
-                    <li class="mb-2"><strong>Coastal Industrial Belts:</strong> Direct port transfers and container yard routing.</li>
-                    <li class="mb-2"><strong>Scheduled Departure Windows:</strong> Fixed daily departure slots.</li>
-                </ul>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-sm btn-outline-light" data-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
+    // 2. Realistic Ground Shadow
+    const shadowPlaneGeo = new THREE.PlaneGeometry(20, 20);
+    const shadowPlaneMat = new THREE.ShadowMaterial({ opacity: 0.45 });
+    const shadowPlane = new THREE.Mesh(shadowPlaneGeo, shadowPlaneMat);
+    shadowPlane.rotation.x = -Math.PI / 2;
+    shadowPlane.position.y = -0.01;
+    shadowPlane.receiveShadow = true;
+    scene.add(shadowPlane);
+
+    // 3. Automotive Studio Lighting Setup
+    // Soft Ambient Base Light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+    scene.add(ambientLight);
+
+    // Key Overhead Light (Daylight White Studio Light)
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    keyLight.position.set(6, 9, 6);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.radius = 3;
+    scene.add(keyLight);
+
+    // Warm Side Fill Light (Enhances metallic reflections on the doors)
+    const sideFillLight = new THREE.DirectionalLight(0xfef3c7, 0.7);
+    sideFillLight.position.set(-6, 4, 3);
+    scene.add(sideFillLight);
+
+    // Cool Overhead Rim Light (Brings out the roof rack line)
+    const topRimLight = new THREE.DirectionalLight(0x93c5fd, 0.8);
+    topRimLight.position.set(0, 8, -6);
+    scene.add(topRimLight);
+
+    // 4. Camera Waypoints per Section
+    const cameraWaypoints = [
+        // Card 1: Low 3/4 Hero Shot
+        {
+            camPos: { x: 3.4, y: 1.1, z: 4.2 },
+            lookAt: { x: 0.2, y: 0.5, z: 0.2 },
+            vanRotY: 0.4
+        },
+        // Card 2: Tight Cockpit Close-Up
+        {
+            camPos: { x: -1.8, y: 1.5, z: 2.2 },
+            lookAt: { x: -0.3, y: 0.8, z: 0.2 },
+            vanRotY: 1.8
+        },
+        // Card 3: Low Rear Cargo View
+        {
+            camPos: { x: -3.2, y: 0.9, z: -3.6 },
+            lookAt: { x: -0.2, y: 0.6, z: -0.2 },
+            vanRotY: 4.1
+        }
+    ];
+
+    // Load Model
+    const loader = new THREE.GLTFLoader();
+    let vanModel = null;
+    let targetVanRotY = cameraWaypoints[0].vanRotY;
+
+    loader.load(
+        '@Url.Content("~/Content/models/van.glb")',
+        function (gltf) {
+            vanModel = gltf.scene;
+            vanModel.scale.set(1, 1, 1);
+            vanModel.position.set(0, 0, 0);
+            vanModel.rotation.y = targetVanRotY;
+
+            vanModel.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            scene.add(vanModel);
+            loadingScreen.style.display = 'none';
+        },
+        undefined,
+        function (error) {
+            console.error('Error loading 3D model:', error);
+            loadingScreen.innerText = 'Error loading model.';
+        }
+    );
+
+    // 5. Scroll Interaction & Card Popups
+    const cards = [
+        document.getElementById('card-1'),
+        document.getElementById('card-2'),
+        document.getElementById('card-3')
+    ];
+    const dots = document.querySelectorAll('.dot');
+
+    window.addEventListener('scroll', () => {
+        const maxScroll = scrollWrapper.offsetHeight - window.innerHeight;
+        const scrollFraction = Math.min(Math.max(window.scrollY / maxScroll, 0), 1);
+
+        let p0, p1, factor;
+        if (scrollFraction <= 0.5) {
+            p0 = cameraWaypoints[0];
+            p1 = cameraWaypoints[1];
+            factor = scrollFraction / 0.5;
+        } else {
+            p0 = cameraWaypoints[1];
+            p1 = cameraWaypoints[2];
+            factor = (scrollFraction - 0.5) / 0.5;
+        }
+
+        targetCamPos.x = THREE.MathUtils.lerp(p0.camPos.x, p1.camPos.x, factor);
+        targetCamPos.y = THREE.MathUtils.lerp(p0.camPos.y, p1.camPos.y, factor);
+        targetCamPos.z = THREE.MathUtils.lerp(p0.camPos.z, p1.camPos.z, factor);
+
+        targetLookAt.x = THREE.MathUtils.lerp(p0.lookAt.x, p1.lookAt.x, factor);
+        targetLookAt.y = THREE.MathUtils.lerp(p0.lookAt.y, p1.lookAt.y, factor);
+        targetLookAt.z = THREE.MathUtils.lerp(p0.lookAt.z, p1.lookAt.z, factor);
+
+        targetVanRotY = THREE.MathUtils.lerp(p0.vanRotY, p1.vanRotY, factor);
+
+        const activeIndex = scrollFraction < 0.33 ? 0 : (scrollFraction < 0.66 ? 1 : 2);
+        const isPastHero = window.scrollY >= maxScroll - 50;
+
+        cards.forEach((card, idx) => {
+            if (idx === activeIndex && !isPastHero) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        });
+
+        dots.forEach((dot, idx) => {
+            dot.classList.toggle('active', idx === activeIndex);
+        });
+
+        if (scrollNav) {
+            scrollNav.style.opacity = isPastHero ? '0' : '1';
+            scrollNav.style.pointerEvents = isPastHero ? 'none' : 'auto';
+        }
+    });
+
+    // 3D Tilt Effect on Mouse Move
+    cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            card.style.transform = `translateY(-50%) rotateY(${x * 0.04}deg) rotateX(${-y * 0.04}deg) scale(1.02)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = '';
+        });
+    });
+
+    // 6. Smooth Render Loop
+    function animate() {
+        requestAnimationFrame(animate);
+
+        currentCamPos.lerp(targetCamPos, 0.06);
+        currentLookAt.lerp(targetLookAt, 0.06);
+
+        camera.position.copy(currentCamPos);
+        camera.lookAt(currentLookAt);
+
+        if (vanModel) {
+            vanModel.rotation.y += (targetVanRotY - vanModel.rotation.y) * 0.06;
+        }
+
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+</script>
