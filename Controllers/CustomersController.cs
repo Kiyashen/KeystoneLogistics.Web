@@ -15,9 +15,19 @@ namespace KeystoneLogistics.Controllers
         private KeystoneLogisticsDBEntities db = new KeystoneLogisticsDBEntities();
 
         // GET: Customers
+        [HttpGet]
         public ActionResult Index()
         {
-            return View(db.Customers.ToList());
+            try
+            {
+                return View(db.Customers.ToList());
+            }
+            catch (Exception ex)
+            {
+                // Log or inspect ex.GetBaseException()
+                TempData["Error"] = ex.GetBaseException().Message;
+                return View(new List<Customer>());
+            }
         }
 
         // GET: Customers/Details/5
@@ -46,16 +56,27 @@ namespace KeystoneLogistics.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "CustomerId,CompanyName,ContactPerson,Email,Phone")] Customer customer)
+        public ActionResult Create(Customer model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                db.Customers.Add(customer);
-                db.SaveChanges();
-                return RedirectToAction("Index");
+                return View(model);
             }
 
-            return View(customer);
+            try
+            {
+                // persist model (example)
+                db.Customers.Add(model);
+                db.SaveChanges();
+
+                TempData["Success"] = "Customer created successfully.";
+                return RedirectToAction("Index");
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "Failed to create customer. Please try again.";
+                return View(model);
+            }
         }
 
         // GET: Customers/Edit/5
@@ -78,15 +99,27 @@ namespace KeystoneLogistics.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "CustomerId,CompanyName,ContactPerson,Email,Phone")] Customer customer)
+        public ActionResult Edit(int id, Customer model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                db.Entry(customer).State = EntityState.Modified;
+                return View(model);
+            }
+
+            try
+            {
+                // update model (example)
+                db.Entry(model).State = System.Data.Entity.EntityState.Modified;
                 db.SaveChanges();
+
+                TempData["Success"] = "Customer updated successfully.";
                 return RedirectToAction("Index");
             }
-            return View(customer);
+            catch (Exception)
+            {
+                TempData["Error"] = "Failed to update customer. Please try again.";
+                return View(model);
+            }
         }
 
         // GET: Customers/Delete/5
@@ -107,12 +140,28 @@ namespace KeystoneLogistics.Controllers
         // POST: Customers/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteConfirmed(int id)
+        public ActionResult Delete(int id)
         {
-            Customer customer = db.Customers.Find(id);
-            db.Customers.Remove(customer);
-            db.SaveChanges();
-            return RedirectToAction("Index");
+            try
+            {
+                var entity = db.Customers.Find(id);
+                if (entity == null)
+                {
+                    TempData["Error"] = "Item not found.";
+                    return RedirectToAction("Index");
+                }
+
+                db.Customers.Remove(entity);
+                db.SaveChanges();
+
+                TempData["Success"] = "Customer deleted successfully.";
+                return RedirectToAction("Index");
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "Failed to delete customer. Please try again.";
+                return RedirectToAction("Index");
+            }
         }
 
         protected override void Dispose(bool disposing)
