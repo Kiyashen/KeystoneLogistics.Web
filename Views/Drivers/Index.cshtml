@@ -1,4 +1,4 @@
-﻿@model IEnumerable<KeystoneLogistics.Models.Driver>
+@model IEnumerable<KeystoneLogistics.Models.Driver>
 
 @{
     ViewBag.Title = "Registered Drivers";
@@ -34,6 +34,7 @@
                         <th class="py-3 px-4">Phone Number</th>
                         <th class="py-3 px-4">Vehicle Reg</th>
                         <th class="py-3 px-4">Status</th>
+                        <th class="py-3 px-4">Active Loads</th>
                         <th class="py-3 px-4 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -41,7 +42,7 @@
                     @if (!Model.Any())
                     {
                         <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
+                            <td colspan="6" class="text-center py-5 text-muted">
                                 <i class="fa-solid fa-truck-ramp-box fa-2x mb-2 d-block"></i>
                                 No driver records found.
                             </td>
@@ -62,10 +63,29 @@
                                     }
                                     else
                                     {
-                                        <span class="badge badge-warning px-2 py-1">On Load / Unavailable</span>
+                                        <span class="badge badge-danger px-2 py-1">Busy</span>
                                     }
                                 </td>
+                                <td class="py-3 px-4">
+                                    @item.Loads.Count(l => l.Status != "Delivered")
+                                </td>
                                 <td class="py-3 px-4 text-right">
+                                    @using (Html.BeginForm("ToggleAvailability", "Drivers", new { id = item.DriverId }, FormMethod.Post, new { @class = "d-inline" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        if (item.IsAvailable.HasValue && item.IsAvailable.Value)
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-warning mr-1" title="Mark Busy">
+                                                <i class="fa-solid fa-toggle-off"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-success mr-1" title="Mark Available">
+                                                <i class="fa-solid fa-toggle-on"></i>
+                                            </button>
+                                        }
+                                    }
                                     <a href="@Url.Action("Edit", new { id = item.DriverId })" class="btn btn-sm btn-outline-secondary mr-1" title="Edit">
                                         <i class="fa-solid fa-pen"></i>
                                     </a>

@@ -57,21 +57,21 @@ CREATE TABLE AuditLogs (
 GO
 
 -- 3. INSERT FRESH DUMMY DATA
-INSERT INTO Customers (CompanyName, ContactPerson, Email, Phone) 
-VALUES 
+INSERT INTO Customers (CompanyName, ContactPerson, Email, Phone)
+VALUES
 ('Apex Freight SA', 'Mandla Khumalo', 'm.khumalo@apexfreight.co.za', '031 301 4455'),
 ('Zululand Distributing', 'Johan van der Merwe', 'johan@zululanddist.co.za', '035 789 1234'),
 ('KZN Coastline Logistics', 'Thandiwe Mthembu', 'tmthembu@kzncoastline.co.za', '031 562 9988'),
 ('Port Natal Trading', 'Farhaan Patel', 'f.patel@portnatal.co.za', '031 205 7711');
 
-INSERT INTO Drivers (FullName, Phone, VehicleRegistration, IsAvailable) 
-VALUES 
-('Sipho Naidoo', '082 411 9201', 'KZN 741 GP', 1),
-('David Botha', '083 652 1098', 'ND 88201', 1),
-('Lungelo Ndlovu', '084 330 8712', 'NP 40291', 0);
+INSERT INTO Drivers (FullName, Phone, VehicleRegistration, IsAvailable)
+VALUES
+('Mahil Naidoo', '082 411 9201', 'NDS 741 ZN', 1),
+('David Botha', '083 652 1098', 'NDW 882 ZN', 1),
+('Lungelo Ndlovu', '084 330 8712', 'NDL 402 ZN', 0);
 
 INSERT INTO Loads (TrackingNumber, CustomerId, DriverId, PickupLocation, DropoffLocation, CargoDescription, Status)
-VALUES 
+VALUES
 ('KL-2026-001', 1, 1, 'Maydon Wharf Gate 4', 'Hammarsdale Industrial Park', 'Auto Parts & Components', 'Dispatched'),
 ('KL-2026-002', 2, 2, 'Richards Bay Dry Bulk Terminal', 'New Germany Warehouse', 'Industrial Steel Coils', 'En Route'),
 ('KL-2026-003', 3, 3, 'Prospecton Manufacturing Hub', 'Cato Ridge Logistics Hub', 'FMCG & Packaging Materials', 'Delivered');

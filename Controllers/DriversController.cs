@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
@@ -17,7 +17,8 @@ namespace KeystoneLogistics.Controllers
         // GET: Drivers
         public ActionResult Index()
         {
-            return View(db.Drivers.ToList());
+            var drivers = db.Drivers.Include(d => d.Loads).ToList();
+            return View(drivers);
         }
 
         // GET: Drivers/Details/5
@@ -87,6 +88,30 @@ namespace KeystoneLogistics.Controllers
                 return RedirectToAction("Index");
             }
             return View(driver);
+        }
+
+        // POST: Drivers/ToggleAvailability/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ToggleAvailability(int id)
+        {
+            Driver driver = db.Drivers.Find(id);
+            if (driver == null)
+            {
+                return HttpNotFound();
+            }
+
+            // Null is treated as "not confirmed available" and toggles to Available,
+            // matching the Index view's existing badge logic where null and false
+            // both render as "Busy".
+            driver.IsAvailable = !(driver.IsAvailable ?? false);
+            db.Entry(driver).State = EntityState.Modified;
+            db.SaveChanges();
+
+            TempData["SuccessMessage"] = driver.FullName + " is now marked as "
+                + (driver.IsAvailable.Value ? "Available" : "Busy") + ".";
+
+            return RedirectToAction("Index");
         }
 
         // GET: Drivers/Delete/5
