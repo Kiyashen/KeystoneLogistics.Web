@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data;
 using System.Data.Entity;
 using System.Linq;
-using System.Net;
-using System.Web;
 using System.Web.Mvc;
 using KeystoneLogistics.Models;
 
@@ -17,115 +13,199 @@ namespace KeystoneLogistics.Controllers
         // GET: Loads
         public ActionResult Index()
         {
-            var loads = db.Loads.Include(l => l.Customer).Include(l => l.Driver);
+            if (Session["UserRole"] == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            string userRole = Session["UserRole"]?.ToString();
+            int userId = Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int id) ? id : 0;
+
+            var loads = db.Loads.Include(l => l.Customer).Include(l => l.Driver).AsQueryable();
+
+            // Role-based data privacy filtering
+            if (userRole == "Customer")
+            {
+                loads = loads.Where(l => l.CustomerId == userId);
+            }
+            else if (userRole == "Driver")
+            {
+                loads = loads.Where(l => l.DriverId == userId || l.WorkStatus == "Accepted");
+            }
+
+            ViewBag.AvailableVehicles = db.Vehicles.Where(v => v.IsAvailable == true).ToList();
+
             return View(loads.ToList());
         }
 
-        // GET: Loads/Details/5
-        public ActionResult Details(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Load load = db.Loads.Include(l => l.Customer).Include(l => l.Driver).FirstOrDefault(l => l.LoadId == id);
-            if (load == null)
-            {
-                return HttpNotFound();
-            }
-            return View(load);
-        }
-
-        // GET: Loads/Create
+        // GET: Loads/Create (Customer Work Request Form)
         public ActionResult Create()
         {
-            ViewBag.CustomerId = new SelectList(db.Customers, "CustomerId", "CompanyName");
-            ViewBag.DriverId = new SelectList(db.Drivers, "DriverId", "FullName");
+            if (Session["UserRole"]?.ToString() != "Customer")
+            {
+                return RedirectToAction("Index");
+            }
             return View();
         }
 
         // POST: Loads/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "LoadId,TrackingNumber,CustomerId,DriverId,PickupLocation,DropoffLocation,CargoDescription,Status,DispatchedDate,DeliveredDate")] Load load)
+        public ActionResult Create([Bind(Include = "PickupLocation,DropoffLocation,CargoDescription")] Load load)
         {
+            if (Session["UserRole"]?.ToString() != "Customer")
+            {
+                return RedirectToAction("Index");
+            }
+
             if (ModelState.IsValid)
             {
+                int count = db.Loads.Count() + 1;
+                load.TrackingNumber = $"KL-2026-{count:D3}";
+
+                // Bind to active user session if available, fallback to default customer
+                if (Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int sessionUserId))
+                {
+                    load.CustomerId = sessionUserId;
+                }
+                else
+                {
+                    var defaultCustomer = db.Customers.FirstOrDefault();
+                    load.CustomerId = defaultCustomer != null ? defaultCustomer.CustomerId : 1;
+                }
+
+                load.Status = "Pending";
+                load.WorkStatus = "Pending";
+                load.RouteSafetyRating = "Safe";
+                load.CurrentLocation = load.PickupLocation;
+
                 db.Loads.Add(load);
                 db.SaveChanges();
 
-                TempData["SuccessMessage"] = $"Load {load.TrackingNumber} was successfully created!";
+                TempData["SuccessMessage"] = $"Work request created successfully! Tracking Number: {load.TrackingNumber}";
                 return RedirectToAction("Index");
             }
 
-            ViewBag.CustomerId = new SelectList(db.Customers, "CustomerId", "CompanyName", load.CustomerId);
-            ViewBag.DriverId = new SelectList(db.Drivers, "DriverId", "FullName", load.DriverId);
             return View(load);
         }
 
-        // GET: Loads/Edit/5
-        public ActionResult Edit(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Load load = db.Loads.Find(id);
-            if (load == null)
-            {
-                return HttpNotFound();
-            }
-            ViewBag.CustomerId = new SelectList(db.Customers, "CustomerId", "CompanyName", load.CustomerId);
-            ViewBag.DriverId = new SelectList(db.Drivers, "DriverId", "FullName", load.DriverId);
-            return View(load);
-        }
-
-        // POST: Loads/Edit/5
+        // POST: Admin Accepts Work Request & Assigns Van
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "LoadId,TrackingNumber,CustomerId,DriverId,PickupLocation,DropoffLocation,CargoDescription,Status,DispatchedDate,DeliveredDate")] Load load)
+        public ActionResult AcceptRequest(int id, int vehicleId, string routeSafety)
         {
-            if (ModelState.IsValid)
+            if (Session["UserRole"]?.ToString() != "Admin")
             {
-                db.Entry(load).State = EntityState.Modified;
-                db.SaveChanges();
-
-                TempData["SuccessMessage"] = $"Load {load.TrackingNumber} was successfully updated!";
                 return RedirectToAction("Index");
             }
-            ViewBag.CustomerId = new SelectList(db.Customers, "CustomerId", "CompanyName", load.CustomerId);
-            ViewBag.DriverId = new SelectList(db.Drivers, "DriverId", "FullName", load.DriverId);
-            return View(load);
-        }
 
-        // GET: Loads/Delete/5
-        public ActionResult Delete(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Load load = db.Loads.Include(l => l.Customer).Include(l => l.Driver).FirstOrDefault(l => l.LoadId == id);
-            if (load == null)
-            {
-                return HttpNotFound();
-            }
-            return View(load);
-        }
-
-        // POST: Loads/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public ActionResult DeleteConfirmed(int id)
-        {
-            Load load = db.Loads.Find(id);
+            var load = db.Loads.Find(id);
             if (load != null)
             {
-                string trackingNumber = load.TrackingNumber;
-                db.Loads.Remove(load);
-                db.SaveChanges();
+                load.WorkStatus = "Accepted";
+                load.AssignedVehicleId = vehicleId;
+                load.RouteSafetyRating = string.IsNullOrEmpty(routeSafety) ? "Safe" : routeSafety;
+                load.Status = "Dispatched";
 
-                TempData["SuccessMessage"] = $"Load {trackingNumber} was successfully deleted!";
+                // Update vehicle status to unavailable
+                var vehicle = db.Vehicles.Find(vehicleId);
+                if (vehicle != null)
+                {
+                    vehicle.IsAvailable = false;
+                }
+
+                // Generate random 4-digit pickup PIN if not present
+                if (string.IsNullOrEmpty(load.CollectionPasscode))
+                {
+                    load.CollectionPasscode = new Random().Next(1000, 9999).ToString();
+                }
+
+                db.SaveChanges();
+                TempData["SuccessMessage"] = $"Work Request #{load.TrackingNumber} Accepted & Vehicle Assigned.";
+            }
+            return RedirectToAction("Index");
+        }
+
+        // POST: Admin Rejects Work Request
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult RejectRequest(int id, string rejectionReason)
+        {
+            if (Session["UserRole"]?.ToString() != "Admin")
+            {
+                return RedirectToAction("Index");
+            }
+
+            var load = db.Loads.Find(id);
+            if (load != null)
+            {
+                load.WorkStatus = "Rejected";
+                load.RejectionReason = rejectionReason;
+                load.Status = "Cancelled";
+                db.SaveChanges();
+                TempData["ErrorMessage"] = $"Work Request #{load.TrackingNumber} Rejected.";
+            }
+            return RedirectToAction("Index");
+        }
+
+        // POST: Driver Collection Passcode Verification
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult VerifyCollection(int id, string enteredPasscode)
+        {
+            if (Session["UserRole"]?.ToString() != "Driver")
+            {
+                return RedirectToAction("Index");
+            }
+
+            var load = db.Loads.Find(id);
+            if (load != null)
+            {
+                if (load.CollectionPasscode == enteredPasscode)
+                {
+                    load.IsCollected = true;
+                    load.Status = "En Route";
+                    load.CurrentLocation = "In Transit to Destination";
+                    TempData["SuccessMessage"] = "Collection PIN Verified! Cargo picked up successfully.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Incorrect Collection PIN! Authorization failed.";
+                }
+                db.SaveChanges();
+            }
+            return RedirectToAction("Index");
+        }
+
+        // POST: Driver Marks Cargo as Delivered
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult MarkDelivered(int id)
+        {
+            if (Session["UserRole"]?.ToString() != "Driver")
+            {
+                return RedirectToAction("Index");
+            }
+
+            var load = db.Loads.Find(id);
+            if (load != null)
+            {
+                load.Status = "Delivered";
+                load.WorkStatus = "Completed";
+                load.CurrentLocation = load.DropoffLocation;
+
+                // Free up assigned vehicle for future loads
+                if (load.AssignedVehicleId != null)
+                {
+                    var vehicle = db.Vehicles.Find(load.AssignedVehicleId);
+                    if (vehicle != null)
+                    {
+                        vehicle.IsAvailable = true;
+                    }
+                }
+
+                db.SaveChanges();
+                TempData["SuccessMessage"] = $"Shipment #{load.TrackingNumber} successfully marked as Delivered!";
             }
             return RedirectToAction("Index");
         }

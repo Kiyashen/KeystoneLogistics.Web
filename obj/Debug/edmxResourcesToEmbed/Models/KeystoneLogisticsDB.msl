@@ -37,6 +37,13 @@
     <EntitySetMapping Name="Loads">
       <EntityTypeMapping TypeName="KeystoneLogisticsDBModel.Load">
         <MappingFragment StoreEntitySet="Loads">
+          <ScalarProperty Name="IsCollected" ColumnName="IsCollected" />
+          <ScalarProperty Name="CurrentLocation" ColumnName="CurrentLocation" />
+          <ScalarProperty Name="RouteSafetyRating" ColumnName="RouteSafetyRating" />
+          <ScalarProperty Name="CollectionPasscode" ColumnName="CollectionPasscode" />
+          <ScalarProperty Name="RejectionReason" ColumnName="RejectionReason" />
+          <ScalarProperty Name="WorkStatus" ColumnName="WorkStatus" />
+          <ScalarProperty Name="AssignedVehicleId" ColumnName="AssignedVehicleId" />
           <ScalarProperty Name="LoadId" ColumnName="LoadId" />
           <ScalarProperty Name="TrackingNumber" ColumnName="TrackingNumber" />
           <ScalarProperty Name="CustomerId" ColumnName="CustomerId" />
@@ -58,6 +65,28 @@
           <ScalarProperty Name="FilePath" ColumnName="FilePath" />
           <ScalarProperty Name="UploadedAt" ColumnName="UploadedAt" />
           <ScalarProperty Name="Notes" ColumnName="Notes" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Users">
+      <EntityTypeMapping TypeName="KeystoneLogisticsDBModel.User">
+        <MappingFragment StoreEntitySet="Users">
+          <ScalarProperty Name="Email" ColumnName="Email" />
+          <ScalarProperty Name="Role" ColumnName="Role" />
+          <ScalarProperty Name="Password" ColumnName="Password" />
+          <ScalarProperty Name="Username" ColumnName="Username" />
+          <ScalarProperty Name="UserId" ColumnName="UserId" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Vehicles">
+      <EntityTypeMapping TypeName="KeystoneLogisticsDBModel.Vehicle">
+        <MappingFragment StoreEntitySet="Vehicles">
+          <ScalarProperty Name="CurrentLocation" ColumnName="CurrentLocation" />
+          <ScalarProperty Name="IsAvailable" ColumnName="IsAvailable" />
+          <ScalarProperty Name="CapacityKg" ColumnName="CapacityKg" />
+          <ScalarProperty Name="VehicleName" ColumnName="VehicleName" />
+          <ScalarProperty Name="VehicleId" ColumnName="VehicleId" />
         </MappingFragment>
       </EntityTypeMapping>
     </EntitySetMapping>

@@ -31,6 +31,13 @@ namespace KeystoneLogistics.Models
         public string Status { get; set; }
         public Nullable<System.DateTime> DispatchedDate { get; set; }
         public Nullable<System.DateTime> DeliveredDate { get; set; }
+        public Nullable<int> AssignedVehicleId { get; set; }
+        public string WorkStatus { get; set; }
+        public string RejectionReason { get; set; }
+        public string CollectionPasscode { get; set; }
+        public string RouteSafetyRating { get; set; }
+        public string CurrentLocation { get; set; }
+        public Nullable<bool> IsCollected { get; set; }
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<AuditLog> AuditLogs { get; set; }
@@ -38,5 +45,6 @@ namespace KeystoneLogistics.Models
         public virtual Driver Driver { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<PODDocument> PODDocuments { get; set; }
+        public virtual Vehicle Vehicle { get; set; }
     }
 }

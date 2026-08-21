@@ -30,5 +30,7 @@ namespace KeystoneLogistics.Models
         public virtual DbSet<Driver> Drivers { get; set; }
         public virtual DbSet<Load> Loads { get; set; }
         public virtual DbSet<PODDocument> PODDocuments { get; set; }
+        public virtual DbSet<User> Users { get; set; }
+        public virtual DbSet<Vehicle> Vehicles { get; set; }
     }
 }

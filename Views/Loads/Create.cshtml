@@ -1,74 +1,48 @@
 ﻿@model KeystoneLogistics.Models.Load
 
 @{
-    ViewBag.Title = "Create Freight Load";
+    ViewBag.Title = "Book Freight Shipment";
 }
 
-<div class="container mt-4" style="max-width: 900px;">
+<div class="container mt-4" style="max-width: 650px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="font-weight-bold mb-1">Create New Freight Load</h2>
-            <p class="text-muted mb-0">Register a new shipment profile and assign route details</p>
+            <h2 class="font-weight-bold mb-1"><i class="fa-solid fa-truck-ramp-box text-info mr-2"></i>Book Freight Shipment</h2>
+            <p class="text-muted mb-0">Submit your cargo pickup details for administrative dispatch</p>
         </div>
         <a href="@Url.Action("Index")" class="btn btn-outline-secondary font-weight-bold px-3 py-2" style="border-radius: 8px;">
-            <i class="fa-solid fa-arrow-left mr-1"></i> Back to Loads
+            <i class="fa-solid fa-arrow-left mr-1"></i> Back
         </a>
     </div>
 
-    <div class="form-card">
+    <div class="card shadow-sm border-0 p-4 rounded-lg bg-white">
         @using (Html.BeginForm())
         {
             @Html.AntiForgeryToken()
             @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
 
-            <div class="form-row">
-                <div class="form-group col-md-6 mb-3">
-                    <label class="font-weight-bold text-dark">Tracking Number</label>
-                    @Html.EditorFor(model => model.TrackingNumber, new { htmlAttributes = new { @class = "form-control form-control-custom", @placeholder = "e.g. KL-2026-005" } })
-                    @Html.ValidationMessageFor(model => model.TrackingNumber, "", new { @class = "text-danger small" })
-                </div>
-
-                <div class="form-group col-md-6 mb-3">
-                    <label class="font-weight-bold text-dark">Customer</label>
-                    @Html.DropDownList("CustomerId", null, htmlAttributes: new { @class = "form-control form-control-custom" })
-                    @Html.ValidationMessageFor(model => model.CustomerId, "", new { @class = "text-danger small" })
-                </div>
+            <div class="form-group mb-3">
+                <label class="font-weight-bold text-dark">Pickup Location</label>
+                @Html.TextBoxFor(model => model.PickupLocation, new { @class = "form-control", @placeholder = "e.g., Durban Port Terminal", @required = "required" })
+                @Html.ValidationMessageFor(model => model.PickupLocation, "", new { @class = "text-danger small" })
             </div>
 
-            <div class="form-row">
-                <div class="form-group col-md-6 mb-3">
-                    <label class="font-weight-bold text-dark">Assigned Driver</label>
-                    @Html.DropDownList("DriverId", null, htmlAttributes: new { @class = "form-control form-control-custom" })
-                    @Html.ValidationMessageFor(model => model.DriverId, "", new { @class = "text-danger small" })
-                </div>
-
-                <div class="form-group col-md-6 mb-3">
-                    <label class="font-weight-bold text-dark">Shipment Status</label>
-                    @Html.DropDownListFor(model => model.Status, new SelectList(new[] { "Dispatched", "En Route", "Delivered" }), "Select Status", new { @class = "form-control form-control-custom" })
-                    @Html.ValidationMessageFor(model => model.Status, "", new { @class = "text-danger small" })
-                </div>
+            <div class="form-group mb-3">
+                <label class="font-weight-bold text-dark">Dropoff Location</label>
+                @Html.TextBoxFor(model => model.DropoffLocation, new { @class = "form-control", @placeholder = "e.g., Pietermaritzburg Central Hub", @required = "required" })
+                @Html.ValidationMessageFor(model => model.DropoffLocation, "", new { @class = "text-danger small" })
             </div>
 
-            <div class="form-row">
-                <div class="form-group col-md-6 mb-3">
-                    <label class="font-weight-bold text-dark">Pickup Location</label>
-                    @Html.EditorFor(model => model.PickupLocation, new { htmlAttributes = new { @class = "form-control form-control-custom", @placeholder = "Origin facility/warehouse" } })
-                    @Html.ValidationMessageFor(model => model.PickupLocation, "", new { @class = "text-danger small" })
-                </div>
-
-                <div class="form-group col-md-6 mb-3">
-                    <label class="font-weight-bold text-dark">Dropoff Destination</label>
-                    @Html.EditorFor(model => model.DropoffLocation, new { htmlAttributes = new { @class = "form-control form-control-custom", @placeholder = "Destination facility" } })
-                    @Html.ValidationMessageFor(model => model.DropoffLocation, "", new { @class = "text-danger small" })
-                </div>
+            <div class="form-group mb-4">
+                <label class="font-weight-bold text-dark">Cargo Description</label>
+                @Html.TextAreaFor(model => model.CargoDescription, new { @class = "form-control", @rows = "4", @placeholder = "e.g., 50 Pallets of Consumer Goods", @required = "required" })
+                @Html.ValidationMessageFor(model => model.CargoDescription, "", new { @class = "text-danger small" })
             </div>
 
-            <hr class="my-4" />
-
-            <div class="d-flex justify-content-end">
-                <a href="@Url.Action("Index")" class="btn btn-light font-weight-bold mr-2 px-4 py-2" style="border-radius: 8px;">Cancel</a>
-                <button type="submit" class="btn btn-primary font-weight-bold px-4 py-2" style="border-radius: 8px;">
-                    <i class="fa-solid fa-floppy-disk mr-1"></i> Save Freight Load
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="@Url.Action("Index")" class="btn btn-light font-weight-bold px-4 py-2" style="border-radius: 8px;">Cancel</a>
+                <button type="submit" class="btn btn-success font-weight-bold px-4 py-2" style="border-radius: 8px;">
+                    <i class="fa-solid fa-paper-plane mr-1"></i> Submit Work Request
                 </button>
             </div>
         }
