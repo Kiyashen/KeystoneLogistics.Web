@@ -122,8 +122,9 @@
                             <td>
                                 <div class="small"><strong>From:</strong> @item.PickupLocation</div>
                                 <div class="small text-muted mb-1"><strong>To:</strong> @item.DropoffLocation</div>
+                                <!-- UPDATED: Passing item.Status into openMapModal -->
                                 <button type="button" class="btn btn-sm btn-outline-info"
-                                        onclick="openMapModal('@item.TrackingNumber', '@item.PickupLocation', '@item.DropoffLocation')">
+                                        onclick="openMapModal('@item.TrackingNumber', '@item.PickupLocation', '@item.DropoffLocation', '@item.Status')">
                                     <i class="fa-solid fa-map-location-dot mr-1"></i> Live Route
                                 </button>
                             </td>
@@ -148,6 +149,10 @@
                                 else if (item.Status == "Cancelled")
                                 {
                                     <span class="badge badge-danger">Rejected</span>
+                                    if (!string.IsNullOrEmpty(item.RejectionReason))
+                                    {
+                                        <br /><small class="text-muted">Reason: @item.RejectionReason</small>
+                                    }
                                 }
                             </td>
                             <td>
@@ -164,49 +169,75 @@
                                 }
                             </td>
                             <td class="text-center">
-                                @* ADMIN WORKFLOW: Accept or Reject *@
+                                @* ADMIN WORKFLOW: Accept or Reject with Reason Selection *@
                                 @if (userRole == "Admin" && item.WorkStatus == "Pending")
                                 {
-                                    <form action="@Url.Action("AcceptRequest", "Loads")" method="post" class="form-inline d-inline">
+                                    using (Html.BeginForm("AcceptRequest", "Loads", FormMethod.Post, new { @class = "mb-2" }))
+                                    {
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@item.LoadId" />
-                                        <select name="vehicleId" class="custom-select custom-select-sm mr-1" required>
-                                            <option value="">Select Vehicle...</option>
-                                            @foreach (var v in availableVehicles)
-                                            {
-                                                <option value="@v.VehicleId">Vehicle #@v.VehicleId</option>
-                                            }
-                                        </select>
-                                        <button type="submit" class="btn btn-sm btn-success mr-1">Accept</button>
-                                    </form>
+                                        
+                                        <div class="form-group mb-1">
+                                            <select name="vehicleId" class="form-control form-control-sm" required>
+                                                <option value="">-- Assign Vehicle --</option>
+                                                @foreach (var v in availableVehicles)
+                                                {
+                                                    <option value="@v.VehicleId">Vehicle #@v.VehicleId (@v.CapacityKg kg)</option>
+                                                }
+                                            </select>
+                                        </div>
 
-                                    <form action="@Url.Action("RejectRequest", "Loads")" method="post" class="d-inline">
+                                        <div class="form-group mb-1">
+                                            <select name="routeSafety" class="form-control form-control-sm">
+                                                <option value="Safe">Safe Route</option>
+                                                <option value="Caution">Caution Required</option>
+                                                <option value="High Risk">High Risk</option>
+                                            </select>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-sm btn-success btn-block font-weight-bold">Accept & Email</button>
+                                    }
+
+                                    using (Html.BeginForm("RejectRequest", "Loads", FormMethod.Post))
+                                    {
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@item.LoadId" />
-                                        <input type="hidden" name="rejectionReason" value="Capacity Constraints" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
-                                    </form>
+                                        
+                                        <div class="form-group mb-1">
+                                            <select name="rejectionReason" class="form-control form-control-sm" required>
+                                                <option value="">-- Select Reason --</option>
+                                                <option value="Location is too far">Location is too far</option>
+                                                <option value="Route is too dangerous">Route is too dangerous</option>
+                                                <option value="Invalid cargo specifications">Invalid cargo specifications</option>
+                                                <option value="Vehicle capacity exceeded">Vehicle capacity exceeded</option>
+                                            </select>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-block">Reject</button>
+                                    }
                                 }
                                 @* DRIVER WORKFLOW: Verify Pickup PIN *@
                                 else if (userRole == "Driver" && item.Status == "Dispatched" && !(item.IsCollected ?? false))
                                 {
-                                    <form action="@Url.Action("VerifyCollection", "Loads")" method="post" class="form-inline d-inline">
+                                    using (Html.BeginForm("VerifyCollection", "Loads", FormMethod.Post, new { @class = "form-inline d-inline" }))
+                                    {
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@item.LoadId" />
                                         <input type="text" name="enteredPasscode" class="form-control form-control-sm mr-1" placeholder="4-Digit PIN" style="width: 100px;" required />
                                         <button type="submit" class="btn btn-sm btn-primary">Verify Pickup</button>
-                                    </form>
+                                    }
                                 }
                                 @* DRIVER WORKFLOW: Mark Delivered *@
                                 else if (userRole == "Driver" && (item.IsCollected ?? false) && item.Status != "Delivered")
                                 {
-                                    <form action="@Url.Action("MarkDelivered", "Loads")" method="post" class="d-inline">
+                                    using (Html.BeginForm("MarkDelivered", "Loads", FormMethod.Post, new { @class = "d-inline" }))
+                                    {
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@item.LoadId" />
                                         <button type="submit" class="btn btn-sm btn-success">
                                             <i class="fa-solid fa-check mr-1"></i> Mark Delivered
                                         </button>
-                                    </form>
+                                    }
                                 }
                                 else if (item.Status == "Delivered")
                                 {
@@ -311,6 +342,12 @@
 
 <script>
     let map = null;
+    let animationInterval = null;
+
+    // LERP Helper Function for smooth gliding animation
+    function lerp(start, end, t) {
+        return start + (end - start) * t;
+    }
 
     // OpenStreetMap Nominatim Dynamic Geocoder
     async function geocodeAddress(address) {
@@ -327,9 +364,13 @@
         return null;
     }
 
-    function openMapModal(trackingNum, pickup, dropoff) {
-        $('#mapModalTitle').html(`<i class="fa-solid fa-route mr-2 text-info"></i> Shipment Tracking (${trackingNum})`);
+    // UPDATED: Added status parameter to control the LERP animation state
+    function openMapModal(trackingNum, pickup, dropoff, status) {
+        $('#mapModalTitle').html(`<i class="fa-solid fa-route mr-2 text-info"></i> Shipment Tracking (${trackingNum}) - <span class="badge badge-light">${status}</span>`);
         $('#trackingMapModal').modal('show');
+
+        // Clear active animation loop if modal is reopened
+        if (animationInterval) clearInterval(animationInterval);
 
         $('#trackingMapModal').off('shown.bs.modal').on('shown.bs.modal', async function () {
             if (map !== null) {
@@ -345,14 +386,17 @@
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
 
-            // Dynamic Geocode resolution with fallback coords (Durban / Pietermaritzburg)
             let pickupCoords = await geocodeAddress(pickup) || [-29.8732, 31.0253];
             let dropoffCoords = await geocodeAddress(dropoff) || [-29.6006, 30.3794];
 
             $('#geocodingStatus').addClass('d-none');
 
-            L.marker(pickupCoords).addTo(map).bindPopup(`<b>Pickup:</b> ${pickup}`).openPopup();
+            // Static Origin and Destination markers
+            L.marker(pickupCoords).addTo(map).bindPopup(`<b>Pickup:</b> ${pickup}`);
             L.marker(dropoffCoords).addTo(map).bindPopup(`<b>Destination:</b> ${dropoff}`);
+
+            // Active Vehicle Marker that will move if En Route
+            let vehicleMarker = L.marker(pickupCoords).addTo(map).bindPopup(`<b>Tracking:</b> ${trackingNum} <br/> <b>Status:</b> ${status}`);
 
             const routeLine = L.polyline([pickupCoords, dropoffCoords], {
                 color: '#17a2b8',
@@ -362,6 +406,36 @@
             }).addTo(map);
 
             map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+
+            // --- LERP ANIMATION LOGIC (Realistic Speed) ---
+            if (status === "En Route") {
+                let t = 0;
+                let step = 0.0004; // Realistic cruising speed increment
+
+                vehicleMarker.openPopup();
+
+                animationInterval = setInterval(() => {
+                    t += step;
+                    if (t >= 1) {
+                        t = 1;
+                        clearInterval(animationInterval);
+                        vehicleMarker.setLatLng(dropoffCoords);
+                        vehicleMarker.setPopupContent(`<b>Tracking:</b> ${trackingNum} <br/> <b>Status:</b> Arrived / Awaiting Final Delivery`).openPopup();
+                    } else {
+                        let currentLat = lerp(pickupCoords[0], dropoffCoords[0], t);
+                        let currentLng = lerp(pickupCoords[1], dropoffCoords[1], t);
+                        vehicleMarker.setLatLng([currentLat, currentLng]);
+                    }
+                }, 50);
+            } else if (status === "Delivered") {
+                vehicleMarker.setLatLng(dropoffCoords);
+                vehicleMarker.setPopupContent(`<b>Tracking:</b> ${trackingNum} <br/> <b>Status:</b> Delivered`).openPopup();
+            }
+        });
+
+        // Clear animation interval when modal closes
+        $('#trackingMapModal').on('hidden.bs.modal', function () {
+            if (animationInterval) clearInterval(animationInterval);
         });
     }
 

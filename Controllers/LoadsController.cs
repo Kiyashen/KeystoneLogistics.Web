@@ -1,4 +1,7 @@
 ﻿using System;
+using System.IO;
+using System.Net;
+using System.Net.Mail;
 using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
@@ -89,7 +92,7 @@ namespace KeystoneLogistics.Controllers
             return View(load);
         }
 
-        // POST: Admin Accepts Work Request & Assigns Van
+        // POST: Admin Accepts Work Request, Assigns Van, & Saves Dispatch File Locally
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult AcceptRequest(int id, int vehicleId, string routeSafety)
@@ -121,7 +124,40 @@ namespace KeystoneLogistics.Controllers
                 }
 
                 db.SaveChanges();
-                TempData["SuccessMessage"] = $"Work Request #{load.TrackingNumber} Accepted & Vehicle Assigned.";
+
+                // Save dispatch email & document locally to bypass network/authentication blocks
+                try
+                {
+                    string folderPath = @"C:\KeystoneLogs\Emails";
+                    if (!Directory.Exists(folderPath))
+                    {
+                        Directory.CreateDirectory(folderPath);
+                    }
+
+                    string fileName = $"Dispatch_{load.TrackingNumber}_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+                    string fullPath = Path.Combine(folderPath, fileName);
+
+                    string emailContent = $"========================================\r\n" +
+                                          $"KEYSTONE LOGISTICS OFFICIAL DISPATCH SHEET\r\n" +
+                                          $"========================================\r\n" +
+                                          $"Tracking Number: {load.TrackingNumber}\r\n" +
+                                          $"Pickup Location: {load.PickupLocation}\r\n" +
+                                          $"Dropoff Location: {load.DropoffLocation}\r\n" +
+                                          $"Cargo Description: {load.CargoDescription}\r\n" +
+                                          $"Collection PIN: {load.CollectionPasscode}\r\n" +
+                                          $"Route Safety Rating: {load.RouteSafetyRating}\r\n" +
+                                          $"Date Issued: {DateTime.Now}\r\n" +
+                                          $"----------------------------------------\r\n" +
+                                          $"Driver Instructions:\n\nA new load has been assigned to you. Please review the dispatch details and secure Collection PIN above.\n\n- Keystone Logistics Admin";
+
+                    System.IO.File.WriteAllText(fullPath, emailContent);
+
+                    TempData["SuccessMessage"] = $"Work Request #{load.TrackingNumber} Accepted, PIN generated ({load.CollectionPasscode}), and saved locally!";
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = $"Request accepted, but local file save failed: {ex.Message}";
+                }
             }
             return RedirectToAction("Index");
         }
@@ -143,7 +179,7 @@ namespace KeystoneLogistics.Controllers
                 load.RejectionReason = rejectionReason;
                 load.Status = "Cancelled";
                 db.SaveChanges();
-                TempData["ErrorMessage"] = $"Work Request #{load.TrackingNumber} Rejected.";
+                TempData["ErrorMessage"] = $"Work Request #{load.TrackingNumber} Rejected. Reason logged for customer review.";
             }
             return RedirectToAction("Index");
         }

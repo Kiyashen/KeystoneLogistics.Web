@@ -2,6 +2,8 @@
     ViewBag.Title = "Home";
 }
 
+@model KeystoneLogistics.Models.DashboardViewModel
+
 <style>
     /* Hero container allowing page scroll */
     .hero-wrapper {
@@ -313,6 +315,58 @@
     </div>
 </div>
 
+<!-- ================= DYNAMIC CUSTOMER REVIEWS DISPLAY ONLY ================= -->
+<div class="container my-5" style="position: relative; z-index: 20; background-color: #0b1120; padding-top: 40px; padding-bottom: 40px;">
+    <div class="row text-center mb-4">
+        <div class="col">
+            <h2 class="font-weight-bold text-white"><i class="fa-solid fa-comments text-primary mr-2"></i>What Our Customers Say</h2>
+            <p class="text-muted">Real feedback from businesses and individuals who trust our fleet.</p>
+        </div>
+    </div>
+
+    <!-- Dynamic Review Cards Grid -->
+    <div class="row mb-5">
+        @if (Model != null && Model.Reviews != null && Model.Reviews.Any())
+        {
+            foreach (var review in Model.Reviews)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm border-0 bg-light">
+                        <div class="card-body d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="mb-2 text-warning">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        if (i <= review.Rating)
+                                        {
+                                            <i class="fa-solid fa-star"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa-regular fa-star"></i>
+                                        }
+                                    }
+                                </div>
+                                <p class="card-text font-italic text-dark">"@review.Comment"</p>
+                            </div>
+                            <div class="border-top pt-2 mt-3 d-flex justify-content-between align-items-center">
+                                <span class="font-weight-bold text-primary small"><i class="fa-solid fa-user-circle mr-1"></i>@review.CustomerName</span>
+                                <span class="text-muted small">@review.DatePosted.ToString("dd MMM yyyy")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col text-center">
+                <p class="text-muted">No reviews available at the moment.</p>
+            </div>
+        }
+    </div>
+</div>
+
 <!-- Three.js Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -353,11 +407,9 @@
     scene.add(shadowPlane);
 
     // 3. Automotive Studio Lighting Setup
-    // Soft Ambient Base Light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
     scene.add(ambientLight);
 
-    // Key Overhead Light (Daylight White Studio Light)
     const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
     keyLight.position.set(6, 9, 6);
     keyLight.castShadow = true;
@@ -366,31 +418,26 @@
     keyLight.shadow.radius = 3;
     scene.add(keyLight);
 
-    // Warm Side Fill Light (Enhances metallic reflections on the doors)
     const sideFillLight = new THREE.DirectionalLight(0xfef3c7, 0.7);
     sideFillLight.position.set(-6, 4, 3);
     scene.add(sideFillLight);
 
-    // Cool Overhead Rim Light (Brings out the roof rack line)
     const topRimLight = new THREE.DirectionalLight(0x93c5fd, 0.8);
     topRimLight.position.set(0, 8, -6);
     scene.add(topRimLight);
 
     // 4. Camera Waypoints per Section
     const cameraWaypoints = [
-        // Card 1: Low 3/4 Hero Shot
         {
             camPos: { x: 3.4, y: 1.1, z: 4.2 },
             lookAt: { x: 0.2, y: 0.5, z: 0.2 },
             vanRotY: 0.4
         },
-        // Card 2: Tight Cockpit Close-Up
         {
             camPos: { x: -1.8, y: 1.5, z: 2.2 },
             lookAt: { x: -0.3, y: 0.8, z: 0.2 },
             vanRotY: 1.8
         },
-        // Card 3: Low Rear Cargo View
         {
             camPos: { x: -3.2, y: 0.9, z: -3.6 },
             lookAt: { x: -0.2, y: 0.6, z: -0.2 },

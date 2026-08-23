@@ -168,6 +168,8 @@
     <Compile Include="Models\PODDocument.cs">
       <DependentUpon>KeystoneLogisticsDB.tt</DependentUpon>
     </Compile>
+    <Compile Include="Models\Review.cs" />
+    <Compile Include="Models\ReviewModel.cs" />
     <Compile Include="Models\User.cs">
       <DependentUpon>KeystoneLogisticsDB.tt</DependentUpon>
     </Compile>
