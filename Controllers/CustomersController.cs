@@ -32,7 +32,7 @@ namespace KeystoneLogistics.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return RedirectToAction("Index");
             }
             Customer customer = db.Customers.Find(id);
             if (customer == null)
@@ -68,7 +68,7 @@ namespace KeystoneLogistics.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return RedirectToAction("Index");
             }
             Customer customer = db.Customers.Find(id);
             if (customer == null)
@@ -97,7 +97,7 @@ namespace KeystoneLogistics.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return RedirectToAction("Index");
             }
             Customer customer = db.Customers.Find(id);
             if (customer == null)
@@ -113,6 +113,18 @@ namespace KeystoneLogistics.Controllers
         public ActionResult DeleteConfirmed(int id)
         {
             Customer customer = db.Customers.Find(id);
+            if (customer == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            // FIX: Remove any associated loads first to bypass foreign key constraint restrictions
+            var associatedLoads = db.Loads.Where(l => l.CustomerId == id).ToList();
+            if (associatedLoads.Any())
+            {
+                db.Loads.RemoveRange(associatedLoads);
+            }
+
             db.Customers.Remove(customer);
             db.SaveChanges();
             return RedirectToAction("Index");

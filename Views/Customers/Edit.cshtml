@@ -55,6 +55,10 @@
                 @using (Html.BeginForm())
                 {
                     @Html.AntiForgeryToken()
+                    
+                    @* CRITICAL FIX: Hidden field to pass CustomerId back to the HttpPost action *@
+                    @Html.HiddenFor(model => model.CustomerId)
+                    
                     @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
 
                     <div class="form-row">

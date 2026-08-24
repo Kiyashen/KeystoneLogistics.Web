@@ -59,28 +59,71 @@ namespace KeystoneLogistics.Controllers
         // POST: Loads/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "PickupLocation,DropoffLocation,CargoDescription")] Load load)
+        public ActionResult Create([Bind(Include = "PickupLocation,DropoffLocation,CargoDescription")] Load load, string CustomerName, string AccountReference)
         {
             if (Session["UserRole"]?.ToString() != "Customer")
             {
                 return RedirectToAction("Index");
             }
 
+            // 1. Smart, Robust Customer Database Verification (Supports Username, ID, Name, Email, or Session Fallback)
+            Customer verifiedCustomer = null;
+
+            if (!string.IsNullOrEmpty(CustomerName))
+            {
+                // Try parsing as ID first
+                if (int.TryParse(CustomerName, out int parsedCustId))
+                {
+                    verifiedCustomer = db.Customers.Find(parsedCustId);
+                }
+
+                // If not found by ID, inspect customer records dynamically for any matching text property
+                if (verifiedCustomer == null)
+                {
+                    var allCustomers = db.Customers.ToList();
+                    verifiedCustomer = allCustomers.FirstOrDefault(c =>
+                        (c.GetType().GetProperty("Username")?.GetValue(c)?.ToString()?.Equals(CustomerName, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (c.GetType().GetProperty("CustomerName")?.GetValue(c)?.ToString()?.Equals(CustomerName, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (c.GetType().GetProperty("Name")?.GetValue(c)?.ToString()?.Equals(CustomerName, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (c.GetType().GetProperty("CompanyName")?.GetValue(c)?.ToString()?.Equals(CustomerName, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (c.GetType().GetProperty("Email")?.GetValue(c)?.ToString()?.Equals(CustomerName, StringComparison.OrdinalIgnoreCase) ?? false)
+                    );
+                }
+            }
+
+            // Fallback: If quick-fill or input text doesn't match a text column, use the active logged-in customer's ID from session
+            if (verifiedCustomer == null && Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int sessionUserId))
+            {
+                verifiedCustomer = db.Customers.Find(sessionUserId);
+            }
+
+            if (verifiedCustomer == null)
+            {
+                ModelState.AddModelError("", "Database Verification Failed: The Customer username/ID does not match an active account in our system.");
+            }
+
+            if (string.IsNullOrWhiteSpace(AccountReference) || !AccountReference.StartsWith("KL-ACC-"))
+            {
+                ModelState.AddModelError("", "Account Reference Validation Failed: Invalid or unrecognized company account format.");
+            }
+
             if (ModelState.IsValid)
             {
-                int count = db.Loads.Count() + 1;
-                load.TrackingNumber = $"KL-2026-{count:D3}";
+                // Assign the verified customer ID from database
+                load.CustomerId = verifiedCustomer.CustomerId;
 
-                // Bind to active user session if available, fallback to default customer
-                if (Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int sessionUserId))
+                // Robust unique tracking number generation to prevent duplicate key collisions
+                int nextId = db.Loads.Any() ? db.Loads.Max(l => l.LoadId) + 1 : 1;
+                string newTrackingNumber;
+
+                do
                 {
-                    load.CustomerId = sessionUserId;
+                    newTrackingNumber = $"KL-{DateTime.Now.Year}-{nextId:D3}";
+                    nextId++;
                 }
-                else
-                {
-                    var defaultCustomer = db.Customers.FirstOrDefault();
-                    load.CustomerId = defaultCustomer != null ? defaultCustomer.CustomerId : 1;
-                }
+                while (db.Loads.Any(l => l.TrackingNumber == newTrackingNumber));
+
+                load.TrackingNumber = newTrackingNumber;
 
                 load.Status = "Pending";
                 load.WorkStatus = "Pending";

@@ -77,10 +77,18 @@
             </div>
 
             <!-- Error Banner -->
-            @if (ViewBag.Error != null)
+            @if (ViewBag.Error != null || ViewBag.ErrorMessage != null)
             {
                 <div class="alert alert-danger border-0 small text-center py-2 mb-4" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-radius: 8px;">
-                    <i class="fa-solid fa-circle-exclamation mr-1"></i> @ViewBag.Error
+                    <i class="fa-solid fa-circle-exclamation mr-1"></i> @(ViewBag.Error ?? ViewBag.ErrorMessage)
+                </div>
+            }
+
+            <!-- Success Banner (For Temporary Password / Inbox Simulation) -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success border-0 small text-center py-2 mb-4" style="background: rgba(34, 197, 94, 0.15); color: #86efac; border-radius: 8px;">
+                    <i class="fa-solid fa-circle-check mr-1"></i> @TempData["SuccessMessage"]
                 </div>
             }
 
@@ -95,7 +103,10 @@
                 </div>
 
                 <div class="form-group mb-4">
-                    <label class="small text-muted font-weight-medium mb-1">Password</label>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="small text-muted font-weight-medium mb-0">Password</label>
+                        @Html.ActionLink("Forgot Password?", "ForgotPassword", "Account", null, new { @class = "small text-info text-decoration-none" })
+                    </div>
                     <input type="password" name="password" class="form-control glass-input" placeholder="Enter password" required />
                 </div>
 

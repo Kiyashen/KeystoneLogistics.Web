@@ -169,6 +169,7 @@
     <Compile Include="Models\PODDocument.cs">
       <DependentUpon>KeystoneLogisticsDB.tt</DependentUpon>
     </Compile>
+    <Compile Include="Models\ResetPasswordModel.cs" />
     <Compile Include="Models\Review.cs" />
     <Compile Include="Models\ReviewModel.cs" />
     <Compile Include="Models\User.cs">
@@ -266,6 +267,8 @@
     <Content Include="Views\Customers\Index.cshtml" />
     <Content Include="Views\Account\Login.cshtml" />
     <Content Include="Views\AuditLogs\Index.cshtml" />
+    <Content Include="Views\Account\ResetPassword.cshtml" />
+    <Content Include="Views\Account\ForgotPassword.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
