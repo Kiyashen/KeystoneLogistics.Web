@@ -258,6 +258,44 @@
             </table>
         </div>
     </div>
+
+    <!-- Admin Audit Trail Section -->
+    @if (userRole == "Admin" && ViewBag.AuditLogs != null)
+    {
+        <div class="card mt-5 shadow-sm p-4 bg-dark text-white border-secondary mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h4 mb-0"><i class="fa-solid fa-clipboard-list text-warning mr-2"></i>System Audit Trail & History</h3>
+                <span class="text-muted small">Automatic activity log (Admin View Only)</span>
+            </div>
+            <hr class="border-secondary" />
+
+            <div class="table-responsive">
+                <table class="table table-dark table-striped table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Audit ID</th>
+                            <th>Load ID</th>
+                            <th>Action Performed</th>
+                            <th>Performed By</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in ViewBag.AuditLogs)
+                        {
+                            <tr>
+                                <td>@log.AuditId</td>
+                                <td><span class="badge badge-secondary">#@log.LoadId</span></td>
+                                <td><strong>@log.Action</strong></td>
+                                <td>@log.PerformedBy</td>
+                                <td>@log.Timestamp</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
 </div>
 
 <!-- Tracking Map Modal -->

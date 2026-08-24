@@ -6,6 +6,7 @@ using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
 using KeystoneLogistics.Models;
+using KeystoneLogistics.Services;
 
 namespace KeystoneLogistics.Controllers
 {
@@ -26,7 +27,7 @@ namespace KeystoneLogistics.Controllers
 
             var loads = db.Loads.Include(l => l.Customer).Include(l => l.Driver).AsQueryable();
 
-            // Role-based data privacy filtering
+            // Role-based data privacy filtering & Admin Audit Log Loading
             if (userRole == "Customer")
             {
                 loads = loads.Where(l => l.CustomerId == userId);
@@ -34,6 +35,10 @@ namespace KeystoneLogistics.Controllers
             else if (userRole == "Driver")
             {
                 loads = loads.Where(l => l.DriverId == userId || l.WorkStatus == "Accepted");
+            }
+            else if (userRole == "Admin")
+            {
+                ViewBag.AuditLogs = db.AuditLogs.OrderByDescending(a => a.Timestamp).ToList();
             }
 
             ViewBag.AvailableVehicles = db.Vehicles.Where(v => v.IsAvailable == true).ToList();
@@ -85,6 +90,10 @@ namespace KeystoneLogistics.Controllers
                 db.Loads.Add(load);
                 db.SaveChanges();
 
+                // Log the creation activity
+                string userRole = Session["UserRole"]?.ToString() ?? "Customer";
+                AuditLogger.Log(load.LoadId, "Created Load: " + load.TrackingNumber, userRole);
+
                 TempData["SuccessMessage"] = $"Work request created successfully! Tracking Number: {load.TrackingNumber}";
                 return RedirectToAction("Index");
             }
@@ -124,6 +133,9 @@ namespace KeystoneLogistics.Controllers
                 }
 
                 db.SaveChanges();
+
+                // Log the acceptance/dispatch activity
+                AuditLogger.Log(load.LoadId, "Accepted & Dispatched Load: " + load.TrackingNumber, "Admin");
 
                 // Save dispatch email & document locally to bypass network/authentication blocks
                 try
@@ -179,6 +191,10 @@ namespace KeystoneLogistics.Controllers
                 load.RejectionReason = rejectionReason;
                 load.Status = "Cancelled";
                 db.SaveChanges();
+
+                // Log rejection activity
+                AuditLogger.Log(load.LoadId, "Rejected Load: " + load.TrackingNumber, "Admin");
+
                 TempData["ErrorMessage"] = $"Work Request #{load.TrackingNumber} Rejected. Reason logged for customer review.";
             }
             return RedirectToAction("Index");
@@ -202,6 +218,10 @@ namespace KeystoneLogistics.Controllers
                     load.IsCollected = true;
                     load.Status = "En Route";
                     load.CurrentLocation = "In Transit to Destination";
+
+                    // Log collection verification
+                    AuditLogger.Log(load.LoadId, "Verified Collection & En Route: " + load.TrackingNumber, "Driver");
+
                     TempData["SuccessMessage"] = "Collection PIN Verified! Cargo picked up successfully.";
                 }
                 else
@@ -241,6 +261,10 @@ namespace KeystoneLogistics.Controllers
                 }
 
                 db.SaveChanges();
+
+                // Log successful delivery
+                AuditLogger.Log(load.LoadId, "Marked Delivered: " + load.TrackingNumber, "Driver");
+
                 TempData["SuccessMessage"] = $"Shipment #{load.TrackingNumber} successfully marked as Delivered!";
             }
             return RedirectToAction("Index");
