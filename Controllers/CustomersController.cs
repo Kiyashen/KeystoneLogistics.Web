@@ -20,12 +20,19 @@ namespace KeystoneLogistics.Controllers
             return View(db.Customers.ToList());
         }
 
+        // GET: Customers/Loads (Displays freight loads and the review form)
+        public ActionResult Loads()
+        {
+            var loads = db.Loads.Include(l => l.Customer).Include(l => l.Driver).ToList();
+            return View(loads);
+        }
+
         // GET: Customers/Details/5
         public ActionResult Details(int? id)
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return RedirectToAction("Index");
             }
             Customer customer = db.Customers.Find(id);
             if (customer == null)
@@ -42,8 +49,6 @@ namespace KeystoneLogistics.Controllers
         }
 
         // POST: Customers/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Create([Bind(Include = "CustomerId,CompanyName,ContactPerson,Email,Phone")] Customer customer)
@@ -63,7 +68,7 @@ namespace KeystoneLogistics.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return RedirectToAction("Index");
             }
             Customer customer = db.Customers.Find(id);
             if (customer == null)
@@ -74,8 +79,6 @@ namespace KeystoneLogistics.Controllers
         }
 
         // POST: Customers/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Edit([Bind(Include = "CustomerId,CompanyName,ContactPerson,Email,Phone")] Customer customer)
@@ -94,7 +97,7 @@ namespace KeystoneLogistics.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return RedirectToAction("Index");
             }
             Customer customer = db.Customers.Find(id);
             if (customer == null)
@@ -110,6 +113,18 @@ namespace KeystoneLogistics.Controllers
         public ActionResult DeleteConfirmed(int id)
         {
             Customer customer = db.Customers.Find(id);
+            if (customer == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            // FIX: Remove any associated loads first to bypass foreign key constraint restrictions
+            var associatedLoads = db.Loads.Where(l => l.CustomerId == id).ToList();
+            if (associatedLoads.Any())
+            {
+                db.Loads.RemoveRange(associatedLoads);
+            }
+
             db.Customers.Remove(customer);
             db.SaveChanges();
             return RedirectToAction("Index");

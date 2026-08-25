@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.IO;
+using System.Linq;
 using System.Web.Mvc;
 using KeystoneLogistics.Models;
 
@@ -50,6 +52,52 @@ namespace KeystoneLogistics.Controllers
         public ActionResult Logout()
         {
             Session.Clear();
+            return RedirectToAction("Login");
+        }
+
+        // GET: Account/ForgotPassword
+        [HttpGet]
+        public ActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        // POST: Account/ForgotPassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ForgotPassword(string email)
+        {
+            // Generate a random temporary password
+            string tempPassword = "Temp" + new Random().Next(1000, 9999);
+
+            // Check if the user exists in the database to update their password
+            var user = db.Users.FirstOrDefault(u => u.Email == email);
+            if (user != null)
+            {
+                user.Password = tempPassword;
+                db.SaveChanges();
+            }
+
+            // ALWAYS write to the text file in the background so you can see it in your project folder
+            try
+            {
+                string filePath = Server.MapPath("~/PasswordInbox.txt");
+                string logEntry = $"-----------------------------------------\n" +
+                                  $"Time: {DateTime.Now}\n" +
+                                  $"Entered Email: {email}\n" +
+                                  $"Temporary Password: {tempPassword}\n" +
+                                  $"Database Match: {(user != null ? "Found & Updated" : "Email not in DB, but generated anyway")}\n" +
+                                  $"-----------------------------------------\n\n";
+
+                System.IO.File.AppendAllText(filePath, logEntry);
+            }
+            catch (Exception)
+            {
+                // Fallback if file write fails
+            }
+
+            // Professional, user-friendly message
+            TempData["SuccessMessage"] = "If your email is registered, a temporary password has been sent to your inbox.";
             return RedirectToAction("Login");
         }
     }

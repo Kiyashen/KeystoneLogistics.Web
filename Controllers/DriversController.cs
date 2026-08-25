@@ -25,7 +25,7 @@ namespace KeystoneLogistics.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return RedirectToAction("Index");
             }
             Driver driver = db.Drivers.Find(id);
             if (driver == null)
@@ -42,8 +42,6 @@ namespace KeystoneLogistics.Controllers
         }
 
         // POST: Drivers/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Create([Bind(Include = "DriverId,FullName,Phone,VehicleRegistration,IsAvailable")] Driver driver)
@@ -63,7 +61,7 @@ namespace KeystoneLogistics.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return RedirectToAction("Index");
             }
             Driver driver = db.Drivers.Find(id);
             if (driver == null)
@@ -74,8 +72,6 @@ namespace KeystoneLogistics.Controllers
         }
 
         // POST: Drivers/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Edit([Bind(Include = "DriverId,FullName,Phone,VehicleRegistration,IsAvailable")] Driver driver)
@@ -94,7 +90,7 @@ namespace KeystoneLogistics.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return RedirectToAction("Index");
             }
             Driver driver = db.Drivers.Find(id);
             if (driver == null)
@@ -110,6 +106,18 @@ namespace KeystoneLogistics.Controllers
         public ActionResult DeleteConfirmed(int id)
         {
             Driver driver = db.Drivers.Find(id);
+            if (driver == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            // Remove associated loads first to prevent foreign key constraint conflicts
+            var associatedLoads = db.Loads.Where(l => l.DriverId == id).ToList();
+            if (associatedLoads.Any())
+            {
+                db.Loads.RemoveRange(associatedLoads);
+            }
+
             db.Drivers.Remove(driver);
             db.SaveChanges();
             return RedirectToAction("Index");
