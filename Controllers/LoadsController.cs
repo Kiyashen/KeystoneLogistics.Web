@@ -6,6 +6,8 @@ using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
 using KeystoneLogistics.Models;
+using System.Web;
+using KeystoneLogistics.Services;
 
 namespace KeystoneLogistics.Controllers
 {
@@ -39,6 +41,29 @@ namespace KeystoneLogistics.Controllers
             ViewBag.AvailableVehicles = db.Vehicles.Where(v => v.IsAvailable == true).ToList();
 
             return View(loads.ToList());
+        }
+
+        // ✅ NEW: GET: Loads/Details/5
+        public ActionResult Details(int id)
+        {
+            // 1. Find the load
+            var load = db.Loads.Find(id);
+            if (load == null)
+            {
+                return HttpNotFound();
+            }
+
+            // 2. Get all POD documents for this load (simple query – no navigation property needed)
+            var podDocuments = db.PODDocuments
+                                 .Where(p => p.LoadId == id)
+                                 .OrderByDescending(p => p.UploadedAt)
+                                 .ToList();
+
+            // 3. Pass them to the view via ViewBag
+            ViewBag.PODs = podDocuments;
+
+            // 4. Return the load model to the view
+            return View(load);
         }
 
         // GET: Loads/Create (Customer Work Request Form)
@@ -253,6 +278,50 @@ namespace KeystoneLogistics.Controllers
                 db.Dispose();
             }
             base.Dispose(disposing);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult UploadPOD(int LoadId, HttpPostedFileBase podFile, string notes)
+        {
+            if (podFile == null || podFile.ContentLength == 0)
+            {
+                TempData["PODError"] = "Please select a file to upload.";
+                return RedirectToAction("Details", new { id = LoadId });
+            }
+
+            try
+            {
+                //save the file uploaded using the PODService.
+                var podService = new PODService();
+                string virtualPath = podService.SavePODFile(podFile);
+
+                if (string.IsNullOrEmpty(virtualPath))
+                {
+                    TempData["PODError"] = "File upload failed. Please try again.";
+                    return RedirectToAction("Details", new { id = LoadId });
+                }
+                // Create a new proof of delivery record (POD)
+                var pod = new PODDocument
+                {
+                    LoadId = LoadId,
+                    FilePath = virtualPath,
+                    UploadedAt = DateTime.Now,
+                    Notes = notes ?? string.Empty
+                };
+
+                db.PODDocuments.Add(pod);
+                db.SaveChanges();
+
+                TempData["PODSuccess"] = "Proof of Delivery uploaded successfully!";
+
+            }
+            catch (Exception ex)
+            {
+                //log the exception you can login later.
+                TempData["PODError"] = $"An error occurred while uploading the file: {ex.Message}";
+            }
+            return RedirectToAction("Details", new { id = LoadId });
         }
     }
 }

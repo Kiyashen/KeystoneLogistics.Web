@@ -176,6 +176,7 @@
     <Compile Include="Models\Vehicle.cs">
       <DependentUpon>KeystoneLogisticsDB.tt</DependentUpon>
     </Compile>
+    <Compile Include="Services\PODService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
