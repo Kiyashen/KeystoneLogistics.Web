@@ -24,10 +24,16 @@ namespace KeystoneLogistics.Controllers
             }
             catch (Exception ex)
             {
-                // Log or inspect ex.GetBaseException()
                 TempData["Error"] = ex.GetBaseException().Message;
                 return View(new List<Customer>());
             }
+        }
+
+        // GET: Customers/Loads (Displays freight loads and the review form)
+        public ActionResult Loads()
+        {
+            var loads = db.Loads.Include(l => l.Customer).Include(l => l.Driver).ToList();
+            return View(loads);
         }
 
         // GET: Customers/Details/5
@@ -35,13 +41,16 @@ namespace KeystoneLogistics.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return RedirectToAction("Index");
             }
+
             Customer customer = db.Customers.Find(id);
+
             if (customer == null)
             {
                 return HttpNotFound();
             }
+
             return View(customer);
         }
 
@@ -52,8 +61,6 @@ namespace KeystoneLogistics.Controllers
         }
 
         // POST: Customers/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Create(Customer model)
@@ -65,7 +72,6 @@ namespace KeystoneLogistics.Controllers
 
             try
             {
-                // persist model (example)
                 db.Customers.Add(model);
                 db.SaveChanges();
 
@@ -84,19 +90,20 @@ namespace KeystoneLogistics.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return RedirectToAction("Index");
             }
+
             Customer customer = db.Customers.Find(id);
+
             if (customer == null)
             {
                 return HttpNotFound();
             }
+
             return View(customer);
         }
 
         // POST: Customers/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Edit(int id, Customer model)
@@ -108,8 +115,7 @@ namespace KeystoneLogistics.Controllers
 
             try
             {
-                // update model (example)
-                db.Entry(model).State = System.Data.Entity.EntityState.Modified;
+                db.Entry(model).State = EntityState.Modified;
                 db.SaveChanges();
 
                 TempData["Success"] = "Customer updated successfully.";
@@ -127,31 +133,45 @@ namespace KeystoneLogistics.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return RedirectToAction("Index");
             }
+
             Customer customer = db.Customers.Find(id);
+
             if (customer == null)
             {
                 return HttpNotFound();
             }
+
             return View(customer);
         }
 
         // POST: Customers/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id)
+        public ActionResult DeleteConfirmed(int id)
         {
             try
             {
-                var entity = db.Customers.Find(id);
-                if (entity == null)
+                Customer customer = db.Customers.Find(id);
+
+                if (customer == null)
                 {
-                    TempData["Error"] = "Item not found.";
+                    TempData["Error"] = "Customer not found.";
                     return RedirectToAction("Index");
                 }
 
-                db.Customers.Remove(entity);
+                // Remove associated loads first to avoid foreign key constraint errors
+                var associatedLoads = db.Loads
+                    .Where(l => l.CustomerId == id)
+                    .ToList();
+
+                if (associatedLoads.Any())
+                {
+                    db.Loads.RemoveRange(associatedLoads);
+                }
+
+                db.Customers.Remove(customer);
                 db.SaveChanges();
 
                 TempData["Success"] = "Customer deleted successfully.";
@@ -170,6 +190,7 @@ namespace KeystoneLogistics.Controllers
             {
                 db.Dispose();
             }
+
             base.Dispose(disposing);
         }
     }

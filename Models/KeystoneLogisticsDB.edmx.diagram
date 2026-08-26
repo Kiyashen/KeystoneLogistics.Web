@@ -14,6 +14,9 @@
         <AssociationConnector Association="KeystoneLogisticsDBModel.FK__Loads__CustomerI__07C12930" ManuallyRouted="false" />
         <AssociationConnector Association="KeystoneLogisticsDBModel.FK__Loads__DriverId__08B54D69" ManuallyRouted="false" />
         <AssociationConnector Association="KeystoneLogisticsDBModel.FK__PODDocume__LoadI__0C85DE4D" ManuallyRouted="false" />
+        <EntityTypeShape EntityType="KeystoneLogisticsDBModel.User" Width="1.5" PointX="7.375" PointY="4.75" />
+        <EntityTypeShape EntityType="KeystoneLogisticsDBModel.Vehicle" Width="1.5" PointX="7.375" PointY="0.875" />
+        <AssociationConnector Association="KeystoneLogisticsDBModel.FK__Loads__AssignedV__245D67DE" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>
