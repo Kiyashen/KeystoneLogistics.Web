@@ -90,6 +90,49 @@ namespace KeystoneLogistics.Controllers
             return View();
         }
 
+        // POST: Home/Contact (Handles support inquiries and appends to App_Data/Inquiries.txt)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Contact(string name, string email, string message)
+        {
+            if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(message))
+            {
+                try
+                {
+                    // Define path to save the text file in App_Data
+                    string directory = Server.MapPath("~/App_Data");
+                    if (!System.IO.Directory.Exists(directory))
+                    {
+                        System.IO.Directory.CreateDirectory(directory);
+                    }
+
+                    string filePath = System.IO.Path.Combine(directory, "Inquiries.txt");
+
+                    // Format the inquiry entry
+                    string logEntry = $"----------------------------------------\n" +
+                                      $"Timestamp: {DateTime.Now}\n" +
+                                      $"Name: {name}\n" +
+                                      $"Email: {email}\n" +
+                                      $"Message: {message}\n\n";
+
+                    // Append to text file
+                    System.IO.File.AppendAllText(filePath, logEntry);
+
+                    TempData["SuccessMessage"] = "Your support inquiry has been successfully submitted!";
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = "Failed to save inquiry: " + ex.Message;
+                }
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Please fill in all fields before submitting.";
+            }
+
+            return RedirectToAction("Contact");
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)
