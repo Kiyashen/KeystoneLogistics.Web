@@ -1,0 +1,104 @@
+﻿@model KeystoneLogistics.Models.Customer
+
+@{
+    ViewBag.Title = "Create Customer";
+}
+
+<style>
+    .glass-card-dark {
+        background: rgba(255, 255, 255, 0.03) !important;
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+        color: #f8fafc;
+    }
+
+    .form-control-dark {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+        padding: 10px 14px;
+        height: 44px;
+    }
+
+        .form-control-dark:focus {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
+            color: #ffffff !important;
+        }
+
+        .form-control-dark::placeholder {
+            color: #64748b;
+        }
+</style>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="font-weight-bold text-white mb-1">
+                <i class="fa-solid fa-building-user mr-2 text-primary"></i>Register New Customer
+            </h2>
+            <p class="text-muted mb-0" style="color: #94a3b8 !important;">Add a new commercial client profile to the logistics portal.</p>
+        </div>
+        <a href="@Url.Action("Index")" class="btn btn-outline-light font-weight-bold" style="border-radius: 8px;">
+            <i class="fa-solid fa-arrow-left mr-1"></i> Back to List
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="glass-card-dark p-4 p-md-5">
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6 mb-3">
+                            <label class="font-weight-bold text-light">Company Name</label>
+                            @Html.EditorFor(model => model.CompanyName, new { htmlAttributes = new { @class = "form-control form-control-dark", @placeholder = "e.g. Freight Corp" } })
+                            @Html.ValidationMessageFor(model => model.CompanyName, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="form-group col-md-6 mb-3">
+                            <label class="font-weight-bold text-light">Contact Person</label>
+                            @Html.EditorFor(model => model.ContactPerson, new { htmlAttributes = new { @class = "form-control form-control-dark", @placeholder = "e.g. Sarah Jenkins" } })
+                            @Html.ValidationMessageFor(model => model.ContactPerson, "", new { @class = "text-danger small" })
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6 mb-3">
+                            <label class="font-weight-bold text-light">Email Address</label>
+                            @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control form-control-dark", @type = "email", @placeholder = "e.g. dispatch@freightcorp.co.za" } })
+                            @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="form-group col-md-6 mb-3">
+                            <label class="font-weight-bold text-light">Phone Number</label>
+                            @Html.EditorFor(model => model.Phone, new { htmlAttributes = new { @class = "form-control form-control-dark", @placeholder = "e.g. +27 31 555 0199" } })
+                            @Html.ValidationMessageFor(model => model.Phone, "", new { @class = "text-danger small" })
+                        </div>
+                    </div>
+
+                    <hr style="border-color: rgba(255, 255, 255, 0.1);" class="my-4" />
+
+                    <div class="d-flex justify-content-end">
+                        <a href="@Url.Action("Index")" class="btn btn-outline-secondary px-4 mr-2" style="border-radius: 8px;">Cancel</a>
+                        <button type="submit" class="btn font-weight-bold px-4 text-white" style="border-radius: 8px; background-color: #2563eb; border: none;">
+                            <i class="fa-solid fa-floppy-disk mr-1"></i> Save Customer
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

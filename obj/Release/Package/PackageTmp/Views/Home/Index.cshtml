@@ -1,0 +1,632 @@
+﻿@{
+    ViewBag.Title = "Home";
+}
+
+@model KeystoneLogistics.Models.DashboardViewModel
+
+<style>
+    /* Hero container allowing page scroll */
+    .hero-wrapper {
+        position: relative;
+        width: 100%;
+        height: 350vh;
+        /* Studio Radial Gradient Backdrop: Light slate center transitioning to deep charcoal */
+        background: radial-gradient(circle at 50% 45%, #1e293b 0%, #0f172a 60%, #0b1120 100%);
+    }
+
+    #canvas-container {
+        position: sticky;
+        top: 0;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    #loading-screen {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #e2e8f0;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        z-index: 10;
+    }
+
+    /* Professional Glassmorphism Cards */
+    .card-overlay {
+        position: fixed;
+        top: 45%;
+        width: 410px;
+        padding: 30px;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        color: #ffffff;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0.6s ease;
+        z-index: 5;
+        transform-style: preserve-3d;
+        perspective: 1000px;
+    }
+
+    /* Active Spring States */
+    .card-left {
+        left: 5%;
+        transform: translateY(-50%) translateX(-140px) scale(0.6) rotateY(30deg) rotateX(-15deg);
+    }
+
+    .card-left.active {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateY(-50%) translateX(0) scale(1) rotateY(0deg) rotateX(0deg);
+        animation: floatAnim 4s ease-in-out 0.8s infinite alternate;
+    }
+
+    .card-right {
+        right: 5%;
+        transform: translateY(-50%) translateX(140px) scale(0.6) rotateY(-30deg) rotateX(-15deg);
+    }
+
+    .card-right.active {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateY(-50%) translateX(0) scale(1) rotateY(0deg) rotateX(0deg);
+        animation: floatAnim 4s ease-in-out 0.8s infinite alternate;
+    }
+
+    /* Subtle Studio Accent Top Line */
+    .card-overlay::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 10%;
+        right: 10%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.6), transparent);
+        border-radius: 2px;
+    }
+
+    /* Card Header Layout */
+    .card-header-flex {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    .card-badge {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+    }
+
+    .card-tag {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #38bdf8;
+        background: rgba(56, 189, 248, 0.1);
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    .card-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #f8fafc;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+    }
+
+    .card-desc {
+        font-size: 13.5px;
+        color: #94a3b8;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+
+    /* Spec Data Grid */
+    .spec-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 16px;
+    }
+
+    .spec-item {
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 10px 14px;
+        border-radius: 10px;
+    }
+
+    .spec-label {
+        font-size: 11px;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        margin-bottom: 3px;
+    }
+
+    .spec-value {
+        font-size: 15px;
+        font-weight: 700;
+        color: #f8fafc;
+    }
+
+    .spec-value.highlight {
+        color: #38bdf8;
+    }
+
+    /* Scroll Navigation Dots */
+    .scroll-nav {
+        position: fixed;
+        right: 25px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        z-index: 10;
+        transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+
+    .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.4s ease;
+        cursor: pointer;
+    }
+
+    .dot.active {
+        height: 28px;
+        border-radius: 10px;
+        background: #38bdf8;
+    }
+
+    @@keyframes floatAnim {
+        0% { transform: translateY(-50%) translateY(0px); }
+        100% { transform: translateY(-50%) translateY(-10px); }
+    }
+
+    /* Moving Reviews Marquee Styles */
+    .reviews-marquee-container {
+        overflow: hidden;
+        width: 100%;
+        position: relative;
+        display: flex;
+        mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+        -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+    }
+
+    .reviews-track {
+        display: flex;
+        gap: 24px;
+        width: max-content;
+        animation: scrollMarquee 35s linear infinite;
+    }
+
+    .reviews-track:hover {
+        animation-play-state: paused;
+    }
+
+    .review-card-wrapper {
+        width: 380px;
+        flex-shrink: 0;
+    }
+
+    @@keyframes scrollMarquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
+    
+    .footer-link:hover {
+        color: #38bdf8 !important;
+    }
+</style>
+
+<div class="hero-wrapper" id="scroll-wrapper">
+    <div id="canvas-container">
+        <div id="loading-screen">LOADING SHOWROOM...</div>
+
+        <!-- Scroll Dots -->
+        <div class="scroll-nav" id="scroll-nav">
+            <div class="dot active" data-index="0"></div>
+            <div class="dot" data-index="1"></div>
+            <div class="dot" data-index="2"></div>
+        </div>
+
+        <!-- Card 1: Express Logistics Fleet -->
+        <div class="card-overlay card-left" id="card-1">
+            <div class="card-header-flex">
+                <div class="card-badge">🚚</div>
+                <div class="card-tag">FLEET METRICS</div>
+            </div>
+            <div class="card-title">Express Logistics Fleet</div>
+            <div class="card-desc">High-capacity cargo vehicles engineered for optimal payload distribution and rapid regional delivery.</div>
+            <div class="spec-grid">
+                <div class="spec-item">
+                    <div class="spec-label">Max Payload</div>
+                    <div class="spec-value highlight">1.8 Tons</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Range</div>
+                    <div class="spec-value">850 km</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Service Type</div>
+                    <div class="spec-value">Express 1:1</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Dispatch Time</div>
+                    <div class="spec-value highlight">&lt; 30 Mins</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Telematics Core -->
+        <div class="card-overlay card-right" id="card-2">
+            <div class="card-header-flex">
+                <div class="card-badge">📡</div>
+                <div class="card-tag">TELEMATICS CORE</div>
+            </div>
+            <div class="card-title">Live Telematics System</div>
+            <div class="card-desc">Real-time satellite tracking, automated dispatch updates, and smart driver route optimization delivered live.</div>
+            <div class="spec-grid">
+                <div class="spec-item">
+                    <div class="spec-label">Ping Latency</div>
+                    <div class="spec-value highlight">&lt; 50 ms</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">GPS Precision</div>
+                    <div class="spec-value">0.5 Meters</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">System Uptime</div>
+                    <div class="spec-value">99.99%</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">AI Dispatch</div>
+                    <div class="spec-value highlight">Active</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Secure Containment -->
+        <div class="card-overlay card-left" id="card-3">
+            <div class="card-header-flex">
+                <div class="card-badge">🛡️</div>
+                <div class="card-tag">CARGO PROTECTION</div>
+            </div>
+            <div class="card-title">Secure Goods Vault</div>
+            <div class="card-desc">Climate-stabilized interior compartments with dual biometric locks and real-time vault status tracking.</div>
+            <div class="spec-grid">
+                <div class="spec-item">
+                    <div class="spec-label">Temp Control</div>
+                    <div class="spec-value highlight">-20°C to +15°C</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Lock System</div>
+                    <div class="spec-value">RFID / Bio</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Security Tier</div>
+                    <div class="spec-value">Grade AAA</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Incident Rate</div>
+                    <div class="spec-value highlight">0.00%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= DYNAMIC MOVING CUSTOMER REVIEWS BANNER ================= -->
+<div class="container-fluid py-5" style="position: relative; z-index: 20; background-color: #0b1120;">
+    <div class="row text-center mb-4">
+        <div class="col">
+            <h2 class="font-weight-bold text-white"><i class="fa-solid fa-comments text-primary mr-2"></i>What Our Customers Say</h2>
+            <p class="text-muted">Real feedback from businesses and individuals who trust our fleet.</p>
+        </div>
+    </div>
+
+    @{
+        var reviewsList = new List<dynamic>();
+
+        if (Model != null && Model.Reviews != null && Model.Reviews.Any())
+        {
+            foreach (var r in Model.Reviews)
+            {
+                reviewsList.Add(new {
+                    Rating = r.Rating,
+                    Comment = r.Comment,
+                    CustomerName = r.CustomerName,
+                    DatePosted = r.DatePosted.ToString("dd MMM yyyy")
+                });
+            }
+        }
+
+        var defaultReviews = new[] {
+            new { Rating = 5, Comment = "The secure vault containment is top tier.", CustomerName = "Jessica Naidoo", DatePosted = "23 Aug 2026" },
+            new { Rating = 5, Comment = "Incredible service! Our shipment arrived ahead of schedule.", CustomerName = "Sipho Mthethwa", DatePosted = "22 Aug 2026" },
+            new { Rating = 5, Comment = "Absolute game changer for our regional supply chain and tracking.", CustomerName = "Priya Pillay", DatePosted = "20 Aug 2026" },
+            new { Rating = 5, Comment = "Lightning-fast dispatch times and professional drivers every single time.", CustomerName = "Devan Govender", DatePosted = "18 Aug 2026" },
+            new { Rating = 4, Comment = "Exceptional live telemetry accuracy. We always know where our cargo is.", CustomerName = "Zinhle Khumalo", DatePosted = "15 Aug 2026" },
+            new { Rating = 5, Comment = "Top-tier logistics partner. Seamless integration with our warehouse.", CustomerName = "Michael van der Merwe", DatePosted = "12 Aug 2026" }
+        };
+
+        if (!reviewsList.Any())
+        {
+            foreach (var dr in defaultReviews) { reviewsList.Add(dr); }
+        }
+        else if (reviewsList.Count < 6)
+        {
+            foreach (var dr in defaultReviews)
+            {
+                if (!reviewsList.Any(x => x.CustomerName == dr.CustomerName)) { reviewsList.Add(dr); }
+            }
+        }
+    }
+
+    <!-- Infinite Moving Marquee Track -->
+    <div class="reviews-marquee-container mb-3">
+        <div class="reviews-track">
+            @for (int loop = 0; loop < 2; loop++)
+            {
+                foreach (var review in reviewsList)
+                {
+                    <div class="review-card-wrapper">
+                        <div class="card h-100 shadow-sm border-0 bg-light">
+                            <div class="card-body d-flex flex-column justify-content-between p-4">
+                                <div>
+                                    <div class="mb-2 text-warning">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            if (i <= review.Rating)
+                                            {
+                                                <i class="fa-solid fa-star"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa-regular fa-star"></i>
+                                            }
+                                        }
+                                    </div>
+                                    <p class="card-text font-italic text-dark">"@review.Comment"</p>
+                                </div>
+                                <div class="border-top pt-2 mt-3 d-flex justify-content-between align-items-center">
+                                    <span class="font-weight-bold text-primary small"><i class="fa-solid fa-user-circle mr-1"></i>@review.CustomerName</span>
+                                    <span class="text-muted small">@review.DatePosted</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Three.js Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<script>
+    const container = document.getElementById('canvas-container');
+    const loadingScreen = document.getElementById('loading-screen');
+    const scrollWrapper = document.getElementById('scroll-wrapper');
+    const scrollNav = document.getElementById('scroll-nav');
+
+    // 1. Transparent Scene Setup (Using CSS Radial Gradient Behind Canvas)
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+
+    let currentCamPos = new THREE.Vector3(3.4, 1.1, 4.2);
+    let targetCamPos = new THREE.Vector3(3.4, 1.1, 4.2);
+    let currentLookAt = new THREE.Vector3(0.2, 0.5, 0.2);
+    let targetLookAt = new THREE.Vector3(0.2, 0.5, 0.2);
+
+    camera.position.copy(currentCamPos);
+    camera.lookAt(currentLookAt);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // 2. Realistic Ground Shadow
+    const shadowPlaneGeo = new THREE.PlaneGeometry(20, 20);
+    const shadowPlaneMat = new THREE.ShadowMaterial({ opacity: 0.45 });
+    const shadowPlane = new THREE.Mesh(shadowPlaneGeo, shadowPlaneMat);
+    shadowPlane.rotation.x = -Math.PI / 2;
+    shadowPlane.position.y = -0.01;
+    shadowPlane.receiveShadow = true;
+    scene.add(shadowPlane);
+
+    // 3. Automotive Studio Lighting Setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+    scene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    keyLight.position.set(6, 9, 6);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.radius = 3;
+    scene.add(keyLight);
+
+    const sideFillLight = new THREE.DirectionalLight(0xfef3c7, 0.7);
+    sideFillLight.position.set(-6, 4, 3);
+    scene.add(sideFillLight);
+
+    const topRimLight = new THREE.DirectionalLight(0x93c5fd, 0.8);
+    topRimLight.position.set(0, 8, -6);
+    scene.add(topRimLight);
+
+    // 4. Camera Waypoints per Section
+    const cameraWaypoints = [
+        {
+            camPos: { x: 3.4, y: 1.1, z: 4.2 },
+            lookAt: { x: 0.2, y: 0.5, z: 0.2 },
+            vanRotY: 0.4
+        },
+        {
+            camPos: { x: -1.8, y: 1.5, z: 2.2 },
+            lookAt: { x: -0.3, y: 0.8, z: 0.2 },
+            vanRotY: 1.8
+        },
+        {
+            camPos: { x: -3.2, y: 0.9, z: -3.6 },
+            lookAt: { x: -0.2, y: 0.6, z: -0.2 },
+            vanRotY: 4.1
+        }
+    ];
+
+    // Load Model
+    const loader = new THREE.GLTFLoader();
+    let vanModel = null;
+    let targetVanRotY = cameraWaypoints[0].vanRotY;
+
+    loader.load(
+        '@Url.Content("~/Content/models/van.glb")',
+        function (gltf) {
+            vanModel = gltf.scene;
+            vanModel.scale.set(1, 1, 1);
+            vanModel.position.set(0, 0, 0);
+            vanModel.rotation.y = targetVanRotY;
+
+            vanModel.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            scene.add(vanModel);
+            loadingScreen.style.display = 'none';
+        },
+        undefined,
+        function (error) {
+            console.error('Error loading 3D model:', error);
+            loadingScreen.innerText = 'Error loading model.';
+        }
+    );
+
+    // 5. Scroll Interaction & Card Popups
+    const cards = [
+        document.getElementById('card-1'),
+        document.getElementById('card-2'),
+        document.getElementById('card-3')
+    ];
+    const dots = document.querySelectorAll('.dot');
+
+    window.addEventListener('scroll', () => {
+        const maxScroll = scrollWrapper.offsetHeight - window.innerHeight;
+        const scrollFraction = Math.min(Math.max(window.scrollY / maxScroll, 0), 1);
+
+        let p0, p1, factor;
+        if (scrollFraction <= 0.5) {
+            p0 = cameraWaypoints[0];
+            p1 = cameraWaypoints[1];
+            factor = scrollFraction / 0.5;
+        } else {
+            p0 = cameraWaypoints[1];
+            p1 = cameraWaypoints[2];
+            factor = (scrollFraction - 0.5) / 0.5;
+        }
+
+        targetCamPos.x = THREE.MathUtils.lerp(p0.camPos.x, p1.camPos.x, factor);
+        targetCamPos.y = THREE.MathUtils.lerp(p0.camPos.y, p1.camPos.y, factor);
+        targetCamPos.z = THREE.MathUtils.lerp(p0.camPos.z, p1.camPos.z, factor);
+
+        targetLookAt.x = THREE.MathUtils.lerp(p0.lookAt.x, p1.lookAt.x, factor);
+        targetLookAt.y = THREE.MathUtils.lerp(p0.lookAt.y, p1.lookAt.y, factor);
+        targetLookAt.z = THREE.MathUtils.lerp(p0.lookAt.z, p1.lookAt.z, factor);
+
+        targetVanRotY = THREE.MathUtils.lerp(p0.vanRotY, p1.vanRotY, factor);
+
+        const activeIndex = scrollFraction < 0.33 ? 0 : (scrollFraction < 0.66 ? 1 : 2);
+        const isPastHero = window.scrollY >= maxScroll - 50;
+
+        cards.forEach((card, idx) => {
+            if (idx === activeIndex && !isPastHero) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        });
+
+        dots.forEach((dot, idx) => {
+            dot.classList.toggle('active', idx === activeIndex);
+        });
+
+        if (scrollNav) {
+            scrollNav.style.opacity = isPastHero ? '0' : '1';
+            scrollNav.style.pointerEvents = isPastHero ? 'none' : 'auto';
+        }
+    });
+
+    // 3D Tilt Effect on Mouse Move
+    cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            card.style.transform = `translateY(-50%) rotateY(${x * 0.04}deg) rotateX(${-y * 0.04}deg) scale(1.02)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = '';
+        });
+    });
+
+    // 6. Smooth Render Loop
+    function animate() {
+        requestAnimationFrame(animate);
+
+        currentCamPos.lerp(targetCamPos, 0.06);
+        currentLookAt.lerp(targetLookAt, 0.06);
+
+        camera.position.copy(currentCamPos);
+        camera.lookAt(currentLookAt);
+
+        if (vanModel) {
+            vanModel.rotation.y += (targetVanRotY - vanModel.rotation.y) * 0.06;
+        }
+
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+</script>
