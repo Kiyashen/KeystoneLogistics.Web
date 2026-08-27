@@ -1,19 +1,20 @@
 ﻿@model KeystoneLogistics.Models.Load
 
 @{
-    ViewBag.Title = "Details";
+    ViewBag.Title = "Load Details";
 }
 
-<h2>Details</h2>
+<h2>Load Details</h2>
 
 <div>
     <h4>Load</h4>
     <hr />
+
     <dl class="dl-horizontal">
+
         <dt>
             @Html.DisplayNameFor(model => model.TrackingNumber)
         </dt>
-
         <dd>
             @Html.DisplayFor(model => model.TrackingNumber)
         </dd>
@@ -21,7 +22,6 @@
         <dt>
             @Html.DisplayNameFor(model => model.PickupLocation)
         </dt>
-
         <dd>
             @Html.DisplayFor(model => model.PickupLocation)
         </dd>
@@ -29,7 +29,6 @@
         <dt>
             @Html.DisplayNameFor(model => model.DropoffLocation)
         </dt>
-
         <dd>
             @Html.DisplayFor(model => model.DropoffLocation)
         </dd>
@@ -37,7 +36,6 @@
         <dt>
             @Html.DisplayNameFor(model => model.CargoDescription)
         </dt>
-
         <dd>
             @Html.DisplayFor(model => model.CargoDescription)
         </dd>
@@ -45,7 +43,6 @@
         <dt>
             @Html.DisplayNameFor(model => model.Status)
         </dt>
-
         <dd>
             @Html.DisplayFor(model => model.Status)
         </dd>
@@ -53,7 +50,6 @@
         <dt>
             @Html.DisplayNameFor(model => model.DispatchedDate)
         </dt>
-
         <dd>
             @Html.DisplayFor(model => model.DispatchedDate)
         </dd>
@@ -61,30 +57,176 @@
         <dt>
             @Html.DisplayNameFor(model => model.DeliveredDate)
         </dt>
-
         <dd>
             @Html.DisplayFor(model => model.DeliveredDate)
         </dd>
 
         <dt>
-            @Html.DisplayNameFor(model => model.Customer.CompanyName)
+            Customer
         </dt>
-
         <dd>
-            @Html.DisplayFor(model => model.Customer.CompanyName)
+            @if (Model.Customer != null)
+            {
+                @Html.DisplayFor(model => model.Customer.CompanyName)
+            }
+            else
+            {
+                <span>No customer assigned</span>
+            }
         </dd>
 
         <dt>
-            @Html.DisplayNameFor(model => model.Driver.FullName)
+            Driver
         </dt>
-
         <dd>
-            @Html.DisplayFor(model => model.Driver.FullName)
+            @if (Model.Driver != null)
+            {
+                @Html.DisplayFor(model => model.Driver.FullName)
+            }
+            else
+            {
+                <span>No driver assigned</span>
+            }
         </dd>
 
     </dl>
 </div>
+
 <p>
-    @Html.ActionLink("Edit", "Edit", new { id = Model.LoadId }) |
-    @Html.ActionLink("Back to List", "Index")
+    @Html.ActionLink(
+        "Edit",
+        "Edit",
+        new { id = Model.LoadId },
+        new { @class = "btn btn-warning" }
+    )
+
+    @Html.Raw(" ")
+
+    @Html.ActionLink(
+        "Back to List",
+        "Index",
+        null,
+        new { @class = "btn btn-secondary" }
+    )
 </p>
+
+<hr />
+
+<h4>Proof of Delivery Documents</h4>
+
+<br />
+
+<!-- UPLOAD POD -->
+@using (Html.BeginForm(
+    "UploadPOD",
+    "Loads",
+    FormMethod.Post,
+    new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+
+    @Html.Hidden("loadId", Model.LoadId)
+
+    <div class="form-group">
+        <label for="podFile">Select POD File</label>
+
+        <input type="file"
+               name="podFile"
+               id="podFile"
+               class="form-control"
+               accept=".pdf,.jpg,.jpeg,.png,.gif" />
+
+        <small class="form-text text-muted">
+            Accepted formats: PDF, JPG, JPEG, PNG and GIF.
+        </small>
+    </div>
+
+    <div class="form-group">
+        <label for="notes">Notes</label>
+
+        <input type="text"
+               name="notes"
+               id="notes"
+               class="form-control"
+               placeholder="Example: Delivery signed by John" />
+    </div>
+
+    <br />
+
+    <button type="submit" class="btn btn-primary">
+        Upload POD
+    </button>
+}
+
+<hr />
+
+<!-- EXISTING POD DOCUMENTS -->
+
+@if (Model.PODDocuments != null && Model.PODDocuments.Any())
+{
+    <h4>Uploaded POD Documents</h4>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Uploaded</th>
+                <th>Notes</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var pod in Model.PODDocuments.OrderByDescending(p => p.UploadedAt))
+            {
+                <tr>
+                    <td>
+                        @if (!string.IsNullOrEmpty(pod.FilePath))
+                        {
+                            <a href="@Url.Content(pod.FilePath)"
+                               target="_blank">
+                                @System.IO.Path.GetFileName(pod.FilePath)
+                            </a>
+                        }
+                        else
+                        {
+                            <span>No file</span>
+                        }
+                    </td>
+
+                    <td>
+                        @pod.UploadedAt
+                    </td>
+
+                    <td>
+                        @if (!string.IsNullOrEmpty(pod.Notes))
+                        {
+                            @pod.Notes
+                        }
+                        else
+                        {
+                            <span>No notes</span>
+                        }
+                    </td>
+
+                    <td>
+                        @if (!string.IsNullOrEmpty(pod.FilePath))
+                        {
+                            <a href="@Url.Content(pod.FilePath)"
+                               target="_blank"
+                               class="btn btn-info btn-sm">
+                                View
+                            </a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">
+        No POD documents have been uploaded for this load yet.
+    </div>
+}
