@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Web;
 using System.Web.Mvc;
 using KeystoneLogistics.Models;
@@ -90,7 +92,7 @@ namespace KeystoneLogistics.Controllers
             return View();
         }
 
-        // POST: Home/Contact (Handles support inquiries and appends to App_Data/Inquiries.txt)
+        // POST: Home/Contact (Handles support inquiries and forwards them via email to your phone)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Contact(string name, string email, string message)
@@ -99,30 +101,26 @@ namespace KeystoneLogistics.Controllers
             {
                 try
                 {
-                    // Define path to save the text file in App_Data
-                    string directory = Server.MapPath("~/App_Data");
-                    if (!System.IO.Directory.Exists(directory))
+                    using (var smtpClient = new SmtpClient())
                     {
-                        System.IO.Directory.CreateDirectory(directory);
+                        var mailMessage = new MailMessage
+                        {
+                            From = new MailAddress("keyram.smma.18@gmail.com", "Keystone Logistics Support"),
+                            Subject = $"New Dispatch Inquiry: {name}",
+                            Body = $"You have received a new support inquiry from the portal:\n\nName: {name}\nEmail: {email}\n\nMessage:\n{message}",
+                            IsBodyHtml = false
+                        };
+
+                        mailMessage.To.Add("keyram.smma.18@gmail.com");
+
+                        smtpClient.Send(mailMessage);
                     }
 
-                    string filePath = System.IO.Path.Combine(directory, "Inquiries.txt");
-
-                    // Format the inquiry entry
-                    string logEntry = $"----------------------------------------\n" +
-                                      $"Timestamp: {DateTime.Now}\n" +
-                                      $"Name: {name}\n" +
-                                      $"Email: {email}\n" +
-                                      $"Message: {message}\n\n";
-
-                    // Append to text file
-                    System.IO.File.AppendAllText(filePath, logEntry);
-
-                    TempData["SuccessMessage"] = "Your support inquiry has been successfully submitted!";
+                    TempData["SuccessMessage"] = "Your support inquiry has been successfully sent to your phone via email!";
                 }
                 catch (Exception ex)
                 {
-                    TempData["ErrorMessage"] = "Failed to save inquiry: " + ex.Message;
+                    TempData["ErrorMessage"] = "Failed to send inquiry email: " + (ex.InnerException != null ? ex.InnerException.Message : ex.Message);
                 }
             }
             else

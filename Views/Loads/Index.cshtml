@@ -4,15 +4,19 @@
     ViewBag.Title = "Freight Loads Dashboard";
     string userRole = Session["UserRole"]?.ToString() ?? "";
     var availableVehicles = ViewBag.AvailableVehicles as List<KeystoneLogistics.Models.Vehicle> ?? new List<KeystoneLogistics.Models.Vehicle>();
+    var loadList = Model ?? Enumerable.Empty<KeystoneLogistics.Models.Load>();
 
-    int pendingCount = Model.Count(l => l.WorkStatus == "Pending");
-    int enRouteCount = Model.Count(l => l.Status == "En Route" || l.Status == "Dispatched");
+    int pendingCount = loadList.Count(l => l.WorkStatus == "Pending" || l.Status == "Pending");
+    int enRouteCount = loadList.Count(l => l.Status == "En Route" || l.Status == "Dispatched");
     int availableVehiclesCount = availableVehicles.Count;
 }
 
 <!-- Leaflet.js Map Assets -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Include html5-qrcode CDN for camera scanning -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -22,7 +26,7 @@
         </div>
         @if (userRole == "Customer")
         {
-            <a href="@Url.Action("Create", "Loads")" class="btn btn-success font-weight-bold">
+            <a href="@Url.Action("Create", "Loads")" class="btn btn-success font-weight-bold shadow-sm">
                 <i class="fa-solid fa-plus mr-1"></i> Book New Shipment
             </a>
         }
@@ -98,9 +102,18 @@
     }
 
     <!-- Main Data Table -->
-    <div class="data-card">
+    <div class="data-card shadow-sm">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0 font-weight-bold"><i class="fa-solid fa-table-list mr-2 text-info"></i>Shipment Records</h5>
+            <div class="input-group" style="width: 300px;">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-secondary text-white border-secondary"><i class="fa-solid fa-search"></i></span>
+                </div>
+                <input type="text" id="loadSearchInput" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Search shipments..." onkeyup="filterTable()" />
+            </div>
+        </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0" id="loadsTable">
                 <thead class="thead-dark">
                     <tr>
                         <th>Tracking #</th>
@@ -113,146 +126,153 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model)
+                    @if (!loadList.Any())
                     {
                         <tr>
-                            <td>
-                                <strong>@item.TrackingNumber</strong>
-                            </td>
-                            <td>
-                                <div class="small"><strong>From:</strong> @item.PickupLocation</div>
-                                <div class="small text-muted mb-1"><strong>To:</strong> @item.DropoffLocation</div>
-                                <!-- UPDATED: Passing item.Status into openMapModal -->
-                                <button type="button" class="btn btn-sm btn-outline-info"
-                                        onclick="openMapModal('@item.TrackingNumber', '@item.PickupLocation', '@item.DropoffLocation', '@item.Status')">
-                                    <i class="fa-solid fa-map-location-dot mr-1"></i> Live Route
-                                </button>
-                            </td>
-                            <td>@item.CargoDescription</td>
-                            <td>
-                                @if (item.Status == "Pending")
-                                {
-                                    <span class="badge badge-warning text-dark">Pending Admin</span>
-                                }
-                                else if (item.Status == "Dispatched")
-                                {
-                                    <span class="badge badge-info">Dispatched</span>
-                                }
-                                else if (item.Status == "En Route")
-                                {
-                                    <span class="badge badge-primary">En Route</span>
-                                }
-                                else if (item.Status == "Delivered")
-                                {
-                                    <span class="badge badge-success">Delivered</span>
-                                }
-                                else if (item.Status == "Cancelled")
-                                {
-                                    <span class="badge badge-danger">Rejected</span>
-                                    if (!string.IsNullOrEmpty(item.RejectionReason))
-                                    {
-                                        <br /><small class="text-muted">Reason: @item.RejectionReason</small>
-                                    }
-                                }
-                            </td>
-                            <td>
-                                @(item.AssignedVehicleId != null ? $"Vehicle #{item.AssignedVehicleId}" : "Unassigned")
-                            </td>
-                            <td>
-                                @if (userRole == "Admin" || userRole == "Customer")
-                                {
-                                    <code class="h6 font-weight-bold text-primary">@(item.CollectionPasscode ?? "N/A")</code>
-                                }
-                                else
-                                {
-                                    <span class="text-muted small"><em>Hidden (Customer Provided)</em></span>
-                                }
-                            </td>
-                            <td class="text-center">
-                                @* ADMIN WORKFLOW: Accept or Reject with Reason Selection *@
-                                @if (userRole == "Admin" && item.WorkStatus == "Pending")
-                                {
-                                    using (Html.BeginForm("AcceptRequest", "Loads", FormMethod.Post, new { @class = "mb-2" }))
-                                    {
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@item.LoadId" />
-                                        
-                                        <div class="form-group mb-1">
-                                            <select name="vehicleId" class="form-control form-control-sm" required>
-                                                <option value="">-- Assign Vehicle --</option>
-                                                @foreach (var v in availableVehicles)
-                                                {
-                                                    <option value="@v.VehicleId">Vehicle #@v.VehicleId (@v.CapacityKg kg)</option>
-                                                }
-                                            </select>
-                                        </div>
-
-                                        <div class="form-group mb-1">
-                                            <select name="routeSafety" class="form-control form-control-sm">
-                                                <option value="Safe">Safe Route</option>
-                                                <option value="Caution">Caution Required</option>
-                                                <option value="High Risk">High Risk</option>
-                                            </select>
-                                        </div>
-
-                                        <button type="submit" class="btn btn-sm btn-success btn-block font-weight-bold">Accept & Email</button>
-                                    }
-
-                                    using (Html.BeginForm("RejectRequest", "Loads", FormMethod.Post))
-                                    {
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@item.LoadId" />
-                                        
-                                        <div class="form-group mb-1">
-                                            <select name="rejectionReason" class="form-control form-control-sm" required>
-                                                <option value="">-- Select Reason --</option>
-                                                <option value="Location is too far">Location is too far</option>
-                                                <option value="Route is too dangerous">Route is too dangerous</option>
-                                                <option value="Invalid cargo specifications">Invalid cargo specifications</option>
-                                                <option value="Vehicle capacity exceeded">Vehicle capacity exceeded</option>
-                                            </select>
-                                        </div>
-
-                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-block">Reject</button>
-                                    }
-                                }
-                                @* DRIVER WORKFLOW: Verify Pickup PIN *@
-                                else if (userRole == "Driver" && item.Status == "Dispatched" && !(item.IsCollected ?? false))
-                                {
-                                    using (Html.BeginForm("VerifyCollection", "Loads", FormMethod.Post, new { @class = "form-inline d-inline" }))
-                                    {
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@item.LoadId" />
-                                        <input type="text" name="enteredPasscode" class="form-control form-control-sm mr-1" placeholder="4-Digit PIN" style="width: 100px;" required />
-                                        <button type="submit" class="btn btn-sm btn-primary">Verify Pickup</button>
-                                    }
-                                }
-                                @* DRIVER WORKFLOW: Mark Delivered *@
-                                else if (userRole == "Driver" && (item.IsCollected ?? false) && item.Status != "Delivered")
-                                {
-                                    using (Html.BeginForm("MarkDelivered", "Loads", FormMethod.Post, new { @class = "d-inline" }))
-                                    {
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@item.LoadId" />
-                                        <button type="submit" class="btn btn-sm btn-success">
-                                            <i class="fa-solid fa-check mr-1"></i> Mark Delivered
-                                        </button>
-                                    }
-                                }
-                                else if (item.Status == "Delivered")
-                                {
-                                    <span class="text-success font-weight-bold d-block mb-1"><i class="fa-solid fa-circle-check"></i> Complete</span>
-                                    <button type="button" class="btn btn-sm btn-outline-dark"
-                                            onclick="printPODReceipt('@item.TrackingNumber', '@item.PickupLocation', '@item.DropoffLocation', '@item.CargoDescription', 'Vehicle #@item.AssignedVehicleId', '@(item.CollectionPasscode ?? "N/A")')">
-                                        <i class="fa-solid fa-file-pdf text-danger mr-1"></i> POD Receipt
-                                    </button>
-                                }
-                                else
-                                {
-                                    <span class="text-muted small">No action required</span>
-                                }
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="fa-solid fa-folder-open fa-2x mb-2 d-block"></i>
+                                No freight shipments found in the system.
                             </td>
                         </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in loadList)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@item.TrackingNumber</strong>
+                                </td>
+                                <td>
+                                    <div class="small"><strong>From:</strong> @item.PickupLocation</div>
+                                    <div class="small text-muted mb-1"><strong>To:</strong> @item.DropoffLocation</div>
+                                    <button type="button" class="btn btn-sm btn-outline-info"
+                                            onclick="openMapModal('@item.TrackingNumber', '@item.PickupLocation', '@item.DropoffLocation', '@item.Status')">
+                                        <i class="fa-solid fa-map-location-dot mr-1"></i> Live Route
+                                    </button>
+                                </td>
+                                <td>@item.CargoDescription</td>
+                                <td>
+                                    @if (item.Status == "Pending")
+                                    {
+                                        <span class="badge badge-warning text-dark">Pending Admin</span>
+                                    }
+                                    else if (item.Status == "Dispatched")
+                                    {
+                                        <span class="badge badge-info">Dispatched</span>
+                                    }
+                                    else if (item.Status == "En Route")
+                                    {
+                                        <span class="badge badge-primary">En Route</span>
+                                    }
+                                    else if (item.Status == "Delivered")
+                                    {
+                                        <span class="badge badge-success">Delivered</span>
+                                    }
+                                    else if (item.Status == "Cancelled" || item.Status == "Rejected")
+                                    {
+                                        <span class="badge badge-danger">Rejected</span>
+                                        if (!string.IsNullOrEmpty(item.RejectionReason))
+                                        {
+                                            <br /><small class="text-muted">Reason: @item.RejectionReason</small>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary">@item.Status</span>
+                                    }
+                                </td>
+                                <td>
+                                    @(item.AssignedVehicleId != null ? $"Vehicle #{item.AssignedVehicleId}" : "Unassigned")
+                                </td>
+                                <td>
+                                    @if (userRole == "Admin" || userRole == "Customer")
+                                    {
+                                        <code class="h6 font-weight-bold text-primary">@(item.CollectionPasscode ?? "N/A")</code>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small"><em>(Customer Provided)</em></span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (userRole == "Admin" && (item.WorkStatus == "Pending" || item.Status == "Pending"))
+                                    {
+                                        using (Html.BeginForm("AcceptRequest", "Loads", FormMethod.Post, new { @class = "mb-2" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.LoadId" />
+
+                                            <div class="form-group mb-1">
+                                                <select name="vehicleId" class="form-control form-control-sm" required>
+                                                    <option value="">-- Assign Vehicle --</option>
+                                                    @foreach (var v in availableVehicles)
+                                                    {
+                                                        <option value="@v.VehicleId">Vehicle #@v.VehicleId (@v.CapacityKg kg)</option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group mb-1">
+                                                <select name="routeSafety" class="form-control form-control-sm">
+                                                    <option value="Safe">Safe Route</option>
+                                                    <option value="Caution">Caution Required</option>
+                                                    <option value="High Risk">High Risk</option>
+                                                </select>
+                                            </div>
+
+                                            <button type="submit" class="btn btn-sm btn-success btn-block font-weight-bold">Accept & Email</button>
+                                        }
+
+                                        using (Html.BeginForm("RejectRequest", "Loads", FormMethod.Post))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.LoadId" />
+
+                                            <div class="form-group mb-1">
+                                                <select name="rejectionReason" class="form-control form-control-sm" required>
+                                                    <option value="">-- Select Reason --</option>
+                                                    <option value="Location is too far">Location is too far</option>
+                                                    <option value="Route is too dangerous">Route is too dangerous</option>
+                                                    <option value="Invalid cargo specifications">Invalid cargo specifications</option>
+                                                    <option value="Vehicle capacity exceeded">Vehicle capacity exceeded</option>
+                                                </select>
+                                            </div>
+
+                                            <button type="submit" class="btn btn-sm btn-outline-danger btn-block">Reject</button>
+                                        }
+                                    }
+                                    else if (userRole == "Driver" && item.Status == "Dispatched" && !(item.IsCollected ?? false))
+                                    {
+                                        using (Html.BeginForm("VerifyCollection", "Loads", FormMethod.Post, new { @class = "form-inline d-inline" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.LoadId" />
+                                            <input type="text" name="enteredPasscode" class="form-control form-control-sm mr-1" placeholder="4-Digit PIN" style="width: 100px;" required />
+                                            <button type="submit" class="btn btn-sm btn-primary">Verify Pickup</button>
+                                        }
+                                    }
+                                    else if (userRole == "Driver" && (item.IsCollected ?? false) && item.Status != "Delivered")
+                                    {
+                                        <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#qrModal@(item.LoadId)">
+                                            <i class="fa-solid fa-qrcode mr-1"></i> Confirm Delivery
+                                        </button>
+                                    }
+                                    else if (item.Status == "Delivered")
+                                    {
+                                        <span class="text-success font-weight-bold d-block mb-1"><i class="fa-solid fa-circle-check"></i> Complete</span>
+                                        <button type="button" class="btn btn-sm btn-outline-dark"
+                                                onclick="printPODReceipt('@item.TrackingNumber', '@item.PickupLocation', '@item.DropoffLocation', '@item.CargoDescription', 'Vehicle #@item.AssignedVehicleId', '@(item.CollectionPasscode ?? "N/A")')">
+                                            <i class="fa-solid fa-file-pdf text-danger mr-1"></i> POD Receipt
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">No action required</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>
@@ -297,6 +317,43 @@
         </div>
     }
 </div>
+
+<!-- QR Verification Modals for Drivers -->
+@foreach (var item in loadList)
+{
+    if (userRole == "Driver" && (item.IsCollected ?? false) && item.Status != "Delivered")
+    {
+        <div class="modal fade" id="qrModal@(item.LoadId)" tabindex="-1" role="dialog" aria-hidden="true" data-load-id="@item.LoadId">
+            <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+                <div class="modal-content bg-dark text-white border-secondary">
+                    @using (Html.BeginForm("MarkDelivered", "Loads", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.LoadId" />
+                        <div class="modal-header border-bottom border-secondary">
+                            <h5 class="modal-title font-weight-bold">
+                                <i class="fa-solid fa-qrcode mr-2 text-success"></i>Scan QR / Verify Delivery (@item.TrackingNumber)
+                            </h5>
+                            <button type="button" class="close text-white closeModalBtn" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="small text-muted">Scanned Code or Tracking Number</label>
+                                <input type="text" id="scannedInput-@(item.LoadId)" name="scannedQRCode" class="form-control bg-dark text-white border-secondary" placeholder="e.g. @item.TrackingNumber" required />
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top border-secondary">
+                            <button type="button" class="btn btn-secondary btn-sm closeModalBtn" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success btn-sm font-weight-bold">Confirm Delivery</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+}
 
 <!-- Tracking Map Modal -->
 <div class="modal fade" id="trackingMapModal" tabindex="-1" role="dialog" aria-hidden="true">
@@ -382,12 +439,10 @@
     let map = null;
     let animationInterval = null;
 
-    // LERP Helper Function for smooth gliding animation
     function lerp(start, end, t) {
         return start + (end - start) * t;
     }
 
-    // OpenStreetMap Nominatim Dynamic Geocoder
     async function geocodeAddress(address) {
         try {
             const query = address.toLowerCase().includes('south africa') ? address : `${address}, South Africa`;
@@ -402,12 +457,10 @@
         return null;
     }
 
-    // UPDATED: Added status parameter to control the LERP animation state
     function openMapModal(trackingNum, pickup, dropoff, status) {
         $('#mapModalTitle').html(`<i class="fa-solid fa-route mr-2 text-info"></i> Shipment Tracking (${trackingNum}) - <span class="badge badge-light">${status}</span>`);
         $('#trackingMapModal').modal('show');
 
-        // Clear active animation loop if modal is reopened
         if (animationInterval) clearInterval(animationInterval);
 
         $('#trackingMapModal').off('shown.bs.modal').on('shown.bs.modal', async function () {
@@ -417,7 +470,6 @@
 
             $('#geocodingStatus').removeClass('d-none');
 
-            // Default map center (KZN Logistics Corridor)
             map = L.map('leafletMap').setView([-29.8587, 31.0218], 9);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -429,11 +481,9 @@
 
             $('#geocodingStatus').addClass('d-none');
 
-            // Static Origin and Destination markers
             L.marker(pickupCoords).addTo(map).bindPopup(`<b>Pickup:</b> ${pickup}`);
             L.marker(dropoffCoords).addTo(map).bindPopup(`<b>Destination:</b> ${dropoff}`);
 
-            // Active Vehicle Marker that will move if En Route
             let vehicleMarker = L.marker(pickupCoords).addTo(map).bindPopup(`<b>Tracking:</b> ${trackingNum} <br/> <b>Status:</b> ${status}`);
 
             const routeLine = L.polyline([pickupCoords, dropoffCoords], {
@@ -444,36 +494,19 @@
             }).addTo(map);
 
             map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+            map.invalidateSize();
 
-            // --- LERP ANIMATION LOGIC (Realistic Speed) ---
             if (status === "En Route") {
                 let t = 0;
-                let step = 0.0004; // Realistic cruising speed increment
-
-                vehicleMarker.openPopup();
-
+                let step = 0.0004;
                 animationInterval = setInterval(() => {
                     t += step;
-                    if (t >= 1) {
-                        t = 1;
-                        clearInterval(animationInterval);
-                        vehicleMarker.setLatLng(dropoffCoords);
-                        vehicleMarker.setPopupContent(`<b>Tracking:</b> ${trackingNum} <br/> <b>Status:</b> Arrived / Awaiting Final Delivery`).openPopup();
-                    } else {
-                        let currentLat = lerp(pickupCoords[0], dropoffCoords[0], t);
-                        let currentLng = lerp(pickupCoords[1], dropoffCoords[1], t);
-                        vehicleMarker.setLatLng([currentLat, currentLng]);
-                    }
+                    if (t > 1 || t < 0) step = -step;
+                    let currentLat = lerp(pickupCoords[0], dropoffCoords[0], t);
+                    let currentLng = lerp(pickupCoords[1], dropoffCoords[1], t);
+                    vehicleMarker.setLatLng([currentLat, currentLng]);
                 }, 50);
-            } else if (status === "Delivered") {
-                vehicleMarker.setLatLng(dropoffCoords);
-                vehicleMarker.setPopupContent(`<b>Tracking:</b> ${trackingNum} <br/> <b>Status:</b> Delivered`).openPopup();
             }
-        });
-
-        // Clear animation interval when modal closes
-        $('#trackingMapModal').on('hidden.bs.modal', function () {
-            if (animationInterval) clearInterval(animationInterval);
         });
     }
 
@@ -484,30 +517,32 @@
         $('#podCargo').text(cargo);
         $('#podVehicle').text(vehicle);
         $('#podPIN').text(pin);
-
         $('#podModal').modal('show');
     }
 
     function triggerPODPrint() {
         const printContents = document.getElementById('printablePOD').innerHTML;
-        const printWindow = window.open('', '_blank', 'height=600,width=800');
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Proof of Delivery - Keystone Logistics</title>
-                    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                </head>
-                <body style="padding: 30px;">
-                    ${printContents}
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 500);
+        const originalContents = document.body.innerHTML;
+        document.body.innerHTML = printContents;
+        window.print();
+        document.body.innerHTML = originalContents;
+        window.location.reload();
+    }
+
+    // --- Table Live Search Filter ---
+    function filterTable() {
+        let input = document.getElementById("loadSearchInput");
+        let filter = input.value.toLowerCase();
+        let table = document.getElementById("loadsTable");
+        let tr = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) {
+            let tdText = tr[i].textContent || tr[i].innerText;
+            if (tdText.toLowerCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
     }
 </script>

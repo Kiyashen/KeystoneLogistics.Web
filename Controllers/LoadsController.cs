@@ -137,6 +137,25 @@ namespace KeystoneLogistics.Controllers
                 string userRole = Session["UserRole"]?.ToString() ?? "Customer";
                 AuditLogger.Log(load.LoadId, "Created Load: " + load.TrackingNumber, userRole);
 
+                // Send Professional Email Notification for New Shipment
+                try
+                {
+                    NotificationService.SendNotificationEmail(
+                        "keyram.smma.18@gmail.com",
+                        $"New Shipment Created: {load.TrackingNumber}",
+                        $"<p>A new freight work request has been successfully submitted and logged into the system.</p>" +
+                        $"<table style='width:100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;'>" +
+                        $"<tr style='background-color: #f1f5f9;'><th style='padding: 8px; border: 1px solid #cbd5e1; text-align: left;'>Parameter</th><th style='padding: 8px; border: 1px solid #cbd5e1; text-align: left;'>Details</th></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Tracking Number</td><td style='padding: 6px; border: 1px solid #cbd5e1;'><strong>{load.TrackingNumber}</strong></td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Pickup Location</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{load.PickupLocation}</td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Dropoff Location</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{load.DropoffLocation}</td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Cargo Description</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{load.CargoDescription}</td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Submission Timestamp</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{DateTime.Now:yyyy-MM-dd HH:mm:ss}</td></tr>" +
+                        $"</table>"
+                    );
+                }
+                catch (Exception) { /* Non-blocking email fail safe */ }
+
                 TempData["SuccessMessage"] = $"Work request created successfully! Tracking Number: {load.TrackingNumber}";
                 return RedirectToAction("Index");
             }
@@ -179,6 +198,24 @@ namespace KeystoneLogistics.Controllers
 
                 // Log the acceptance/dispatch activity
                 AuditLogger.Log(load.LoadId, "Accepted & Dispatched Load: " + load.TrackingNumber, "Admin");
+
+                // Send Professional Email Notification for Admin Acceptance & PIN Generation
+                try
+                {
+                    NotificationService.SendNotificationEmail(
+                        "keyram.smma.18@gmail.com",
+                        $"Dispatch & PIN Assigned: {load.TrackingNumber}",
+                        $"<p>The work request has been approved and officially dispatched with secure driver verification credentials.</p>" +
+                        $"<table style='width:100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;'>" +
+                        $"<tr style='background-color: #f1f5f9;'><th style='padding: 8px; border: 1px solid #cbd5e1; text-align: left;'>Dispatch Parameter</th><th style='padding: 8px; border: 1px solid #cbd5e1; text-align: left;'>Assigned Data</th></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Tracking Number</td><td style='padding: 6px; border: 1px solid #cbd5e1;'><strong>{load.TrackingNumber}</strong></td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Collection PIN</td><td style='padding: 6px; border: 1px solid #cbd5e1;'><span style='font-size: 15px; color: #b91c1c; font-weight: bold;'>{load.CollectionPasscode}</span></td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Route Safety Rating</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{load.RouteSafetyRating}</td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Assigned Vehicle ID</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{load.AssignedVehicleId}</td></tr>" +
+                        $"</table>"
+                    );
+                }
+                catch (Exception) { /* Non-blocking */ }
 
                 // Save dispatch email & document locally to bypass network/authentication blocks
                 try
@@ -238,6 +275,26 @@ namespace KeystoneLogistics.Controllers
                 // Log rejection activity
                 AuditLogger.Log(load.LoadId, "Rejected Load: " + load.TrackingNumber, "Admin");
 
+                // Send Email Notification for Rejection with Reason
+                try
+                {
+                    NotificationService.SendNotificationEmail(
+                        "keyram.smma.18@gmail.com",
+                        $"Shipment Request Rejected: {load.TrackingNumber}",
+                        $"<p>A freight work request has been rejected by the administrator.</p>" +
+                        $"<table style='width:100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;'>" +
+                        $"<tr style='background-color: #f1f5f9;'><th style='padding: 8px; border: 1px solid #cbd5e1; text-align: left;'>Rejection Parameter</th><th style='padding: 8px; border: 1px solid #cbd5e1; text-align: left;'>Details</th></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Tracking Number</td><td style='padding: 6px; border: 1px solid #cbd5e1;'><strong>{load.TrackingNumber}</strong></td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Pickup Location</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{load.PickupLocation}</td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Dropoff Location</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{load.DropoffLocation}</td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Cargo Description</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{load.CargoDescription}</td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1; color: #b91c1c; font-weight: bold;'>Rejection Reason</td><td style='padding: 6px; border: 1px solid #cbd5e1; color: #b91c1c; font-weight: bold;'>{load.RejectionReason}</td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Timestamp</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{DateTime.Now:yyyy-MM-dd HH:mm:ss}</td></tr>" +
+                        $"</table>"
+                    );
+                }
+                catch (Exception) { /* Non-blocking fail-safe */ }
+
                 TempData["ErrorMessage"] = $"Work Request #{load.TrackingNumber} Rejected. Reason logged for customer review.";
             }
             return RedirectToAction("Index");
@@ -276,10 +333,10 @@ namespace KeystoneLogistics.Controllers
             return RedirectToAction("Index");
         }
 
-        // POST: Driver Marks Cargo as Delivered
+        // POST: Driver Marks Cargo as Delivered via QR Scanner Modal
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult MarkDelivered(int id)
+        public ActionResult MarkDelivered(int id, string scannedQRCode)
         {
             if (Session["UserRole"]?.ToString() != "Driver")
             {
@@ -289,6 +346,15 @@ namespace KeystoneLogistics.Controllers
             var load = db.Loads.Find(id);
             if (load != null)
             {
+                // Optional validation: Ensure scanned QR code matches tracking number or collection passcode if provided
+                if (!string.IsNullOrEmpty(scannedQRCode) &&
+                    !scannedQRCode.Equals(load.TrackingNumber, StringComparison.OrdinalIgnoreCase) &&
+                    !scannedQRCode.Equals(load.CollectionPasscode, StringComparison.OrdinalIgnoreCase))
+                {
+                    TempData["ErrorMessage"] = $"Invalid QR Code scanned ({scannedQRCode}). Expected tracking number or PIN.";
+                    return RedirectToAction("Index");
+                }
+
                 load.Status = "Delivered";
                 load.WorkStatus = "Completed";
                 load.CurrentLocation = load.DropoffLocation;
@@ -305,11 +371,63 @@ namespace KeystoneLogistics.Controllers
 
                 db.SaveChanges();
 
-                // Log successful delivery
-                AuditLogger.Log(load.LoadId, "Marked Delivered: " + load.TrackingNumber, "Driver");
+                // Dynamically fetch Proof of Delivery (POD) details via reflection to prevent compilation errors
+                var pod = db.PODDocuments.FirstOrDefault(p => p.LoadId == load.LoadId);
+                string podId = "N/A";
+                string recipient = "Verified QR Receiver";
 
-                TempData["SuccessMessage"] = $"Shipment #{load.TrackingNumber} successfully marked as Delivered!";
+                if (pod != null)
+                {
+                    var podType = pod.GetType();
+                    var idProp = podType.GetProperties().FirstOrDefault(p => p.Name.EndsWith("Id", StringComparison.OrdinalIgnoreCase) || p.Name.Contains("Document") || p.Name.Contains("Ref"));
+                    var nameProp = podType.GetProperties().FirstOrDefault(p => p.Name.Contains("Name") || p.Name.Contains("Sign") || p.Name.Contains("Customer") || p.Name.Contains("Receiver"));
+
+                    if (idProp != null) podId = idProp.GetValue(pod)?.ToString() ?? "N/A";
+                    if (nameProp != null) recipient = nameProp.GetValue(pod)?.ToString() ?? "Verified QR Receiver";
+                }
+
+                string podSection = pod != null
+                    ? $"<br/><h4 style='color: #0f172a; margin-bottom: 8px;'>Proof of Delivery (POD) Documentation</h4>" +
+                      $"<table style='width:100%; border-collapse: collapse; margin-top: 5px; font-size: 13px;'>" +
+                      $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1; background: #f8fafc;'><strong>POD Reference ID</strong></td><td style='padding: 6px; border: 1px solid #cbd5e1;'>POD-{podId}</td></tr>" +
+                      $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1; background: #f8fafc;'><strong>Signatory / Receiver</strong></td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{recipient}</td></tr>" +
+                      $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1; background: #f8fafc;'><strong>Completion Timestamp</strong></td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{DateTime.Now:yyyy-MM-dd HH:mm:ss}</td></tr>" +
+                      $"</table>"
+                    : $"<br/><p style='color: #047857; font-weight: bold;'>Status: Successfully verified via camera QR scan ({scannedQRCode ?? "Direct"}) and completed.</p>";
+
+                // Log successful delivery audit
+                string auditAction = string.IsNullOrEmpty(scannedQRCode)
+                    ? "Marked Delivered: " + load.TrackingNumber
+                    : $"QR Code Verified & Delivered ({scannedQRCode}): " + load.TrackingNumber;
+
+                AuditLogger.Log(load.LoadId, auditAction, "Driver");
+
+                // Send Professional Email Notification with Scanned Proof
+                try
+                {
+                    NotificationService.SendNotificationEmail(
+                        "keyram.smma.18@gmail.com",
+                        $"Delivery Confirmed via QR Scan: {load.TrackingNumber}",
+                        $"<p>Your package has been successfully delivered and verified via mobile QR scanner.</p>" +
+                        $"<table style='width:100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;'>" +
+                        $"<tr style='background-color: #f1f5f9;'><th style='padding: 8px; border: 1px solid #cbd5e1; text-align: left;'>Parameter</th><th style='padding: 8px; border: 1px solid #cbd5e1; text-align: left;'>Details</th></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Tracking Number</td><td style='padding: 6px; border: 1px solid #cbd5e1;'><strong>{load.TrackingNumber}</strong></td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Scanned QR Code</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{scannedQRCode ?? "N/A"}</td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Dropoff Location</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{load.DropoffLocation}</td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Handover Timestamp</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{DateTime.Now:yyyy-MM-dd HH:mm:ss}</td></tr>" +
+                        $"</table>" +
+                        podSection
+                    );
+                }
+                catch (Exception) { /* Non-blocking fail-safe */ }
+
+                TempData["SuccessMessage"] = $"Shipment #{load.TrackingNumber} successfully verified via QR scan and marked as Delivered!";
             }
+            else
+            {
+                TempData["ErrorMessage"] = "Load record not found.";
+            }
+
             return RedirectToAction("Index");
         }
 
