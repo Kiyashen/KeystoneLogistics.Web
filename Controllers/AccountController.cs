@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Web.Mvc;
 using KeystoneLogistics.Models;
+using KeystoneLogistics.Services;
 
 namespace KeystoneLogistics.Controllers
 {
@@ -70,30 +71,26 @@ namespace KeystoneLogistics.Controllers
             // Generate a random temporary password
             string tempPassword = "Temp" + new Random().Next(1000, 9999);
 
-            // Check if the user exists in the database to update their password
-            var user = db.Users.FirstOrDefault(u => u.Email == email);
+            // Check if the user exists in the database by Email OR Username
+            var user = db.Users.FirstOrDefault(u => u.Email == email || u.Username == email);
             if (user != null)
             {
                 user.Password = tempPassword;
                 db.SaveChanges();
             }
 
-            // ALWAYS write to the text file in the background so you can see it in your project folder
+            // Determine recipient email safely from user record or fallback to input
+            string recipientEmail = user != null && !string.IsNullOrEmpty(user.Email) ? user.Email : email;
+
+            // Send via real Gmail SMTP through NotificationService
             try
             {
-                string filePath = Server.MapPath("~/PasswordInbox.txt");
-                string logEntry = $"-----------------------------------------\n" +
-                                  $"Time: {DateTime.Now}\n" +
-                                  $"Entered Email: {email}\n" +
-                                  $"Temporary Password: {tempPassword}\n" +
-                                  $"Database Match: {(user != null ? "Found & Updated" : "Email not in DB, but generated anyway")}\n" +
-                                  $"-----------------------------------------\n\n";
-
-                System.IO.File.AppendAllText(filePath, logEntry);
+                NotificationService.SendTemporaryPassword(recipientEmail, tempPassword);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Fallback if file write fails
+                // Log email failure if necessary
+                System.Diagnostics.Debug.WriteLine($"Email sending failed: {ex.Message}");
             }
 
             // Professional, user-friendly message

@@ -1,8 +1,51 @@
-﻿/* Core Layout */
+﻿:root {
+    --bg-color: #f4f6f9;
+    --text-color: #2c3e50;
+    --card-bg: #ffffff;
+    --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    --table-th-bg: #f8fafc;
+    --table-th-color: #64748b;
+    --table-th-border: #e2e8f0;
+    --table-td-color: #1e293b;
+    --table-border: #f1f5f9;
+    --table-row-hover: #f8fafc;
+    --action-edit-bg: #f1f5f9;
+    --action-edit-color: #334155;
+    --action-edit-hover-bg: #e2e8f0;
+    --action-edit-hover-color: #0f172a;
+    --action-details-bg: #eff6ff;
+    --action-details-color: #2563eb;
+    --action-details-hover-bg: #dbeafe;
+    --action-details-hover-color: #1d4ed8;
+}
+
+body.dark-mode {
+    --bg-color: #0f172a;
+    --text-color: #f8fafc;
+    --card-bg: #1e293b;
+    --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --table-th-bg: #0f172a;
+    --table-th-color: #94a3b8;
+    --table-th-border: #334155;
+    --table-td-color: #f1f5f9;
+    --table-border: #334155;
+    --table-row-hover: #273548;
+    --action-edit-bg: #334155;
+    --action-edit-color: #f1f5f9;
+    --action-edit-hover-bg: #475569;
+    --action-edit-hover-color: #ffffff;
+    --action-details-bg: rgba(37, 99, 235, 0.2);
+    --action-details-color: #60a5fa;
+    --action-details-hover-bg: rgba(37, 99, 235, 0.4);
+    --action-details-hover-color: #93c5fd;
+}
+
+/* Core Layout */
 body {
-    background-color: #f4f6f9;
+    background-color: var(--bg-color);
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-    color: #2c3e50;
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .body-content {
@@ -61,11 +104,12 @@ body {
 
 /* Custom Executive Table Styling */
 .executive-card {
-    background: #ffffff;
+    background: var(--card-bg);
     border: none;
     border-radius: 14px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--card-shadow);
     overflow: hidden;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .executive-table {
@@ -75,21 +119,21 @@ body {
 }
 
     .executive-table th {
-        background-color: #f8fafc;
-        color: #64748b;
+        background-color: var(--table-th-bg);
+        color: var(--table-th-color);
         font-size: 0.78rem;
         text-transform: uppercase;
         letter-spacing: 0.8px;
         font-weight: 700;
         padding: 16px;
-        border-bottom: 2px solid #e2e8f0;
+        border-bottom: 2px solid var(--table-th-border);
     }
 
     .executive-table td {
         padding: 16px;
         vertical-align: middle;
-        border-bottom: 1px solid #f1f5f9;
-        color: #1e293b;
+        border-bottom: 1px solid var(--table-border);
+        color: var(--table-td-color);
         font-size: 0.92rem;
     }
 
@@ -98,7 +142,7 @@ body {
     }
 
         .executive-table tbody tr:hover {
-            background-color: #f8fafc;
+            background-color: var(--table-row-hover);
         }
 
 /* Status Badges */
@@ -145,29 +189,31 @@ body {
 
 /* Quick Action Buttons */
 .btn-action-edit {
-    background-color: #f1f5f9;
-    color: #334155;
+    background-color: var(--action-edit-bg);
+    color: var(--action-edit-color);
     font-weight: 600;
     border-radius: 6px;
     padding: 5px 12px;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
     .btn-action-edit:hover {
-        background-color: #e2e8f0;
-        color: #0f172a;
+        background-color: var(--action-edit-hover-bg);
+        color: var(--action-edit-hover-color);
         text-decoration: none;
     }
 
 .btn-action-details {
-    background-color: #eff6ff;
-    color: #2563eb;
+    background-color: var(--action-details-bg);
+    color: var(--action-details-color);
     font-weight: 600;
     border-radius: 6px;
     padding: 5px 12px;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
     .btn-action-details:hover {
-        background-color: #dbeafe;
-        color: #1d4ed8;
+        background-color: var(--action-details-hover-bg);
+        color: var(--action-details-hover-color);
         text-decoration: none;
     }

@@ -15,9 +15,6 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Include html5-qrcode CDN for camera scanning -->
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
@@ -254,8 +251,8 @@
                                     }
                                     else if (userRole == "Driver" && (item.IsCollected ?? false) && item.Status != "Delivered")
                                     {
-                                        <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#qrModal@(item.LoadId)">
-                                            <i class="fa-solid fa-qrcode mr-1"></i> Confirm Delivery
+                                        <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#deliveryModal@(item.LoadId)">
+                                            <i class="fa-solid fa-clipboard-check mr-1"></i> Confirm Delivery
                                         </button>
                                     }
                                     else if (item.Status == "Delivered")
@@ -282,48 +279,53 @@
     <!-- Admin Audit Trail Section -->
     @if (userRole == "Admin" && ViewBag.AuditLogs != null)
     {
-        <div class="card mt-5 shadow-sm p-4 bg-dark text-white border-secondary mb-5">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="h4 mb-0"><i class="fa-solid fa-clipboard-list text-warning mr-2"></i>System Audit Trail & History</h3>
-                <span class="text-muted small">Automatic activity log (Admin View Only)</span>
-            </div>
-            <hr class="border-secondary" />
+        var auditLogs = ViewBag.AuditLogs as System.Collections.IEnumerable;
+        if (auditLogs != null)
+        {
+            <div class="card mt-5 shadow-sm p-4 bg-dark text-white border-secondary mb-5">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="h4 mb-0"><i class="fa-solid fa-clipboard-list text-warning mr-2"></i>System Audit Trail & History</h3>
+                    <span class="text-muted small">Automatic activity log (Admin View Only)</span>
+                </div>
+                <hr class="border-secondary" />
 
-            <div class="table-responsive">
-                <table class="table table-dark table-striped table-hover align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th>Audit ID</th>
-                            <th>Load ID</th>
-                            <th>Action Performed</th>
-                            <th>Performed By</th>
-                            <th>Timestamp</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var log in ViewBag.AuditLogs)
-                        {
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped table-hover align-middle mb-0">
+                        <thead>
                             <tr>
-                                <td>@log.AuditId</td>
-                                <td><span class="badge badge-secondary">#@log.LoadId</span></td>
-                                <td><strong>@log.Action</strong></td>
-                                <td>@log.PerformedBy</td>
-                                <td>@log.Timestamp</td>
+                                <th>Audit ID</th>
+                                <th>Load ID</th>
+                                <th>Action Performed</th>
+                                <th>Performed By</th>
+                                <th>Timestamp</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in auditLogs)
+                            {
+                                var dynLog = log as dynamic;
+                                <tr>
+                                    <td>@dynLog.AuditId</td>
+                                    <td><span class="badge badge-secondary">#@dynLog.LoadId</span></td>
+                                    <td><strong>@dynLog.Action</strong></td>
+                                    <td>@dynLog.PerformedBy</td>
+                                    <td>@dynLog.Timestamp</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
+        }
     }
 </div>
 
-<!-- QR Verification Modals for Drivers -->
+<!-- Delivery Confirmation Modals for Drivers -->
 @foreach (var item in loadList)
 {
     if (userRole == "Driver" && (item.IsCollected ?? false) && item.Status != "Delivered")
     {
-        <div class="modal fade" id="qrModal@(item.LoadId)" tabindex="-1" role="dialog" aria-hidden="true" data-load-id="@item.LoadId">
+        <div class="modal fade" id="deliveryModal@(item.LoadId)" tabindex="-1" role="dialog" aria-hidden="true" data-load-id="@item.LoadId">
             <div class="modal-dialog modal-md modal-dialog-centered" role="document">
                 <div class="modal-content bg-dark text-white border-secondary">
                     @using (Html.BeginForm("MarkDelivered", "Loads", FormMethod.Post))
@@ -332,7 +334,7 @@
                         <input type="hidden" name="id" value="@item.LoadId" />
                         <div class="modal-header border-bottom border-secondary">
                             <h5 class="modal-title font-weight-bold">
-                                <i class="fa-solid fa-qrcode mr-2 text-success"></i>Scan QR / Verify Delivery (@item.TrackingNumber)
+                                <i class="fa-solid fa-clipboard-check mr-2 text-success"></i>Confirm Delivery (@item.TrackingNumber)
                             </h5>
                             <button type="button" class="close text-white closeModalBtn" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
@@ -340,7 +342,7 @@
                         </div>
                         <div class="modal-body">
                             <div class="form-group">
-                                <label class="small text-muted">Scanned Code or Tracking Number</label>
+                                <label class="small text-muted">Tracking Number / Confirmation Reference</label>
                                 <input type="text" id="scannedInput-@(item.LoadId)" name="scannedQRCode" class="form-control bg-dark text-white border-secondary" placeholder="e.g. @item.TrackingNumber" required />
                             </div>
                         </div>

@@ -47,6 +47,20 @@ namespace KeystoneLogistics.Services
             }
         }
 
+        public static void SendTemporaryPassword(string recipientEmail, string tempPassword)
+        {
+            string subject = "Password Reset Request";
+            string messageBody = $@"
+                <p>Hello,</p>
+                <p>We received a request to reset your password for your Keystone Logistics account.</p>
+                <p>Your temporary password is: <strong style='color: #0f172a; font-size: 16px;'>{tempPassword}</strong></p>
+                <p>Please log in using this temporary password and update it immediately in your account settings for security purposes.</p>
+                <br/>
+                <p>If you did not request a password reset, please ignore this email or contact support.</p>";
+
+            SendNotificationEmail(recipientEmail, subject, messageBody);
+        }
+
         private static string GetProfessionalTemplate(string title, string content)
         {
             return $@"

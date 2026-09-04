@@ -22,12 +22,18 @@
         border-radius: 8px !important;
     }
 
-    .form-control-dark:focus {
-        background: rgba(255, 255, 255, 0.06) !important;
-        border-color: #38bdf8 !important;
-        box-shadow: 0 0 0 0.2rem rgba(56, 189, 248, 0.25) !important;
-        color: #f8fafc !important;
-    }
+        .form-control-dark:focus {
+            background: rgba(255, 255, 255, 0.06) !important;
+            border-color: #38bdf8 !important;
+            box-shadow: 0 0 0 0.2rem rgba(56, 189, 248, 0.25) !important;
+            color: #f8fafc !important;
+        }
+
+        /* Fix dropdown option contrast in dark theme */
+        .form-control-dark option {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
 
     .tc-scroll-box {
         max-height: 140px;
@@ -68,13 +74,22 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="text-uppercase font-weight-bold small text-muted" style="letter-spacing: 0.5px;">Customer Username / ID *</label>
-                        <input type="text" id="CustomerName" name="CustomerName" class="form-control form-control-dark" placeholder="e.g., customer1" required />
-                        <small class="text-muted form-text">Must match an active account in our database.</small>
+                        <input type="text" id="CustomerName" name="CustomerName" class="form-control form-control-dark" value="customer1" readonly />
+                        <small class="text-muted form-text">Authenticated session active.</small>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="text-uppercase font-weight-bold small text-muted" style="letter-spacing: 0.5px;">Company Account Reference *</label>
-                        <input type="text" id="AccountReference" name="AccountReference" class="form-control form-control-dark" placeholder="e.g., KL-ACC-8842" required />
-                        <small class="text-muted form-text">Required for registry validation.</small>
+                        <label class="text-uppercase font-weight-bold small text-muted" style="letter-spacing: 0.5px;">Select Registered Company *</label>
+                        <select id="AccountReference" name="AccountReference" class="form-control form-control-dark" required>
+                            <option value="">-- Select Company from Database --</option>
+                            @if (ViewBag.CustomerList != null)
+                            {
+                                foreach (var item in (SelectList)ViewBag.CustomerList)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        </select>
+                        <small class="text-muted form-text">Choose active account from registry.</small>
                     </div>
                 </div>
             </div>

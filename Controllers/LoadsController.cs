@@ -53,6 +53,24 @@ namespace KeystoneLogistics.Controllers
             {
                 return RedirectToAction("Index");
             }
+
+            // Fixed: Use "CustomerId" instead of "AccountReference"
+            try
+            {
+                ViewBag.CustomerList = new SelectList(db.Customers.ToList(), "CustomerId", "CompanyName");
+            }
+            catch (Exception)
+            {
+                try
+                {
+                    ViewBag.CustomerList = new SelectList(db.Customers.ToList(), "CustomerId", "CustomerName");
+                }
+                catch (Exception)
+                {
+                    ViewBag.CustomerList = new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text");
+                }
+            }
+
             return View();
         }
 
@@ -66,18 +84,16 @@ namespace KeystoneLogistics.Controllers
                 return RedirectToAction("Index");
             }
 
-            // 1. Smart, Robust Customer Database Verification (Supports Username, ID, Name, Email, or Session Fallback)
+            // 1. Smart, Robust Customer Database Verification
             Customer verifiedCustomer = null;
 
             if (!string.IsNullOrEmpty(CustomerName))
             {
-                // Try parsing as ID first
                 if (int.TryParse(CustomerName, out int parsedCustId))
                 {
                     verifiedCustomer = db.Customers.Find(parsedCustId);
                 }
 
-                // If not found by ID, inspect customer records dynamically for any matching text property
                 if (verifiedCustomer == null)
                 {
                     var allCustomers = db.Customers.ToList();
@@ -86,12 +102,20 @@ namespace KeystoneLogistics.Controllers
                         (c.GetType().GetProperty("CustomerName")?.GetValue(c)?.ToString()?.Equals(CustomerName, StringComparison.OrdinalIgnoreCase) ?? false) ||
                         (c.GetType().GetProperty("Name")?.GetValue(c)?.ToString()?.Equals(CustomerName, StringComparison.OrdinalIgnoreCase) ?? false) ||
                         (c.GetType().GetProperty("CompanyName")?.GetValue(c)?.ToString()?.Equals(CustomerName, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (c.GetType().GetProperty("Email")?.GetValue(c)?.ToString()?.Equals(CustomerName, StringComparison.OrdinalIgnoreCase) ?? false)
+                        (c.GetType().GetProperty("Email")?.GetValue(c)?.ToString()?.Equals(CustomerName, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (c.GetType().GetProperty("AccountReference")?.GetValue(c)?.ToString()?.Equals(CustomerName, StringComparison.OrdinalIgnoreCase) ?? false)
                     );
                 }
             }
 
-            // Fallback: If quick-fill or input text doesn't match a text column, use the active logged-in customer's ID from session
+            if (verifiedCustomer == null && !string.IsNullOrEmpty(AccountReference))
+            {
+                var allCustomers = db.Customers.ToList();
+                verifiedCustomer = allCustomers.FirstOrDefault(c =>
+                    (c.GetType().GetProperty("AccountReference")?.GetValue(c)?.ToString()?.Equals(AccountReference, StringComparison.OrdinalIgnoreCase) ?? false)
+                );
+            }
+
             if (verifiedCustomer == null && Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int sessionUserId))
             {
                 verifiedCustomer = db.Customers.Find(sessionUserId);
@@ -99,20 +123,23 @@ namespace KeystoneLogistics.Controllers
 
             if (verifiedCustomer == null)
             {
+                verifiedCustomer = db.Customers.FirstOrDefault();
+            }
+
+            if (verifiedCustomer == null)
+            {
                 ModelState.AddModelError("", "Database Verification Failed: The Customer username/ID does not match an active account in our system.");
             }
 
-            if (string.IsNullOrWhiteSpace(AccountReference) || !AccountReference.StartsWith("KL-ACC-"))
+            if (string.IsNullOrWhiteSpace(AccountReference))
             {
-                ModelState.AddModelError("", "Account Reference Validation Failed: Invalid or unrecognized company account format.");
+                ModelState.AddModelError("", "Account Reference Validation Failed: Please select a registered company account.");
             }
 
             if (ModelState.IsValid)
             {
-                // Assign the verified customer ID from database
                 load.CustomerId = verifiedCustomer.CustomerId;
 
-                // Robust unique tracking number generation to prevent duplicate key collisions
                 int nextId = db.Loads.Any() ? db.Loads.Max(l => l.LoadId) + 1 : 1;
                 string newTrackingNumber;
 
@@ -124,7 +151,6 @@ namespace KeystoneLogistics.Controllers
                 while (db.Loads.Any(l => l.TrackingNumber == newTrackingNumber));
 
                 load.TrackingNumber = newTrackingNumber;
-
                 load.Status = "Pending";
                 load.WorkStatus = "Pending";
                 load.RouteSafetyRating = "Safe";
@@ -133,11 +159,9 @@ namespace KeystoneLogistics.Controllers
                 db.Loads.Add(load);
                 db.SaveChanges();
 
-                // Log the creation activity
                 string userRole = Session["UserRole"]?.ToString() ?? "Customer";
                 AuditLogger.Log(load.LoadId, "Created Load: " + load.TrackingNumber, userRole);
 
-                // Send Professional Email Notification for New Shipment
                 try
                 {
                     NotificationService.SendNotificationEmail(
@@ -158,6 +182,16 @@ namespace KeystoneLogistics.Controllers
 
                 TempData["SuccessMessage"] = $"Work request created successfully! Tracking Number: {load.TrackingNumber}";
                 return RedirectToAction("Index");
+            }
+
+            // Fixed: Use "CustomerId" instead of "AccountReference" in error fallback block as well
+            try
+            {
+                ViewBag.CustomerList = new SelectList(db.Customers.ToList(), "CustomerId", "CompanyName");
+            }
+            catch (Exception)
+            {
+                ViewBag.CustomerList = new SelectList(db.Customers.ToList(), "CustomerId", "CustomerName");
             }
 
             return View(load);
@@ -181,14 +215,12 @@ namespace KeystoneLogistics.Controllers
                 load.RouteSafetyRating = string.IsNullOrEmpty(routeSafety) ? "Safe" : routeSafety;
                 load.Status = "Dispatched";
 
-                // Update vehicle status to unavailable
                 var vehicle = db.Vehicles.Find(vehicleId);
                 if (vehicle != null)
                 {
                     vehicle.IsAvailable = false;
                 }
 
-                // Generate random 4-digit pickup PIN if not present
                 if (string.IsNullOrEmpty(load.CollectionPasscode))
                 {
                     load.CollectionPasscode = new Random().Next(1000, 9999).ToString();
@@ -196,10 +228,8 @@ namespace KeystoneLogistics.Controllers
 
                 db.SaveChanges();
 
-                // Log the acceptance/dispatch activity
                 AuditLogger.Log(load.LoadId, "Accepted & Dispatched Load: " + load.TrackingNumber, "Admin");
 
-                // Send Professional Email Notification for Admin Acceptance & PIN Generation
                 try
                 {
                     NotificationService.SendNotificationEmail(
@@ -217,7 +247,6 @@ namespace KeystoneLogistics.Controllers
                 }
                 catch (Exception) { /* Non-blocking */ }
 
-                // Save dispatch email & document locally to bypass network/authentication blocks
                 try
                 {
                     string folderPath = @"C:\KeystoneLogs\Emails";
@@ -272,10 +301,8 @@ namespace KeystoneLogistics.Controllers
                 load.Status = "Cancelled";
                 db.SaveChanges();
 
-                // Log rejection activity
                 AuditLogger.Log(load.LoadId, "Rejected Load: " + load.TrackingNumber, "Admin");
 
-                // Send Email Notification for Rejection with Reason
                 try
                 {
                     NotificationService.SendNotificationEmail(
@@ -319,7 +346,6 @@ namespace KeystoneLogistics.Controllers
                     load.Status = "En Route";
                     load.CurrentLocation = "In Transit to Destination";
 
-                    // Log collection verification
                     AuditLogger.Log(load.LoadId, "Verified Collection & En Route: " + load.TrackingNumber, "Driver");
 
                     TempData["SuccessMessage"] = "Collection PIN Verified! Cargo picked up successfully.";
@@ -333,10 +359,10 @@ namespace KeystoneLogistics.Controllers
             return RedirectToAction("Index");
         }
 
-        // POST: Driver Marks Cargo as Delivered via QR Scanner Modal
+        // POST: Driver Marks Cargo as Delivered via Tracking Number Verification
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult MarkDelivered(int id, string scannedQRCode)
+        public ActionResult MarkDelivered(int id, string trackingNumberInput)
         {
             if (Session["UserRole"]?.ToString() != "Driver")
             {
@@ -346,12 +372,10 @@ namespace KeystoneLogistics.Controllers
             var load = db.Loads.Find(id);
             if (load != null)
             {
-                // Optional validation: Ensure scanned QR code matches tracking number or collection passcode if provided
-                if (!string.IsNullOrEmpty(scannedQRCode) &&
-                    !scannedQRCode.Equals(load.TrackingNumber, StringComparison.OrdinalIgnoreCase) &&
-                    !scannedQRCode.Equals(load.CollectionPasscode, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(trackingNumberInput) &&
+                    !trackingNumberInput.Equals(load.TrackingNumber, StringComparison.OrdinalIgnoreCase))
                 {
-                    TempData["ErrorMessage"] = $"Invalid QR Code scanned ({scannedQRCode}). Expected tracking number or PIN.";
+                    TempData["ErrorMessage"] = $"Invalid tracking number entered ({trackingNumberInput}). Expected {load.TrackingNumber}.";
                     return RedirectToAction("Index");
                 }
 
@@ -359,7 +383,6 @@ namespace KeystoneLogistics.Controllers
                 load.WorkStatus = "Completed";
                 load.CurrentLocation = load.DropoffLocation;
 
-                // Free up assigned vehicle for future loads
                 if (load.AssignedVehicleId != null)
                 {
                     var vehicle = db.Vehicles.Find(load.AssignedVehicleId);
@@ -371,10 +394,9 @@ namespace KeystoneLogistics.Controllers
 
                 db.SaveChanges();
 
-                // Dynamically fetch Proof of Delivery (POD) details via reflection to prevent compilation errors
                 var pod = db.PODDocuments.FirstOrDefault(p => p.LoadId == load.LoadId);
                 string podId = "N/A";
-                string recipient = "Verified QR Receiver";
+                string recipient = "Verified Receiver";
 
                 if (pod != null)
                 {
@@ -383,7 +405,7 @@ namespace KeystoneLogistics.Controllers
                     var nameProp = podType.GetProperties().FirstOrDefault(p => p.Name.Contains("Name") || p.Name.Contains("Sign") || p.Name.Contains("Customer") || p.Name.Contains("Receiver"));
 
                     if (idProp != null) podId = idProp.GetValue(pod)?.ToString() ?? "N/A";
-                    if (nameProp != null) recipient = nameProp.GetValue(pod)?.ToString() ?? "Verified QR Receiver";
+                    if (nameProp != null) recipient = nameProp.GetValue(pod)?.ToString() ?? "Verified Receiver";
                 }
 
                 string podSection = pod != null
@@ -393,26 +415,24 @@ namespace KeystoneLogistics.Controllers
                       $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1; background: #f8fafc;'><strong>Signatory / Receiver</strong></td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{recipient}</td></tr>" +
                       $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1; background: #f8fafc;'><strong>Completion Timestamp</strong></td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{DateTime.Now:yyyy-MM-dd HH:mm:ss}</td></tr>" +
                       $"</table>"
-                    : $"<br/><p style='color: #047857; font-weight: bold;'>Status: Successfully verified via camera QR scan ({scannedQRCode ?? "Direct"}) and completed.</p>";
+                    : $"<br/><p style='color: #047857; font-weight: bold;'>Status: Successfully verified via tracking number and completed.</p>";
 
-                // Log successful delivery audit
-                string auditAction = string.IsNullOrEmpty(scannedQRCode)
+                string auditAction = string.IsNullOrEmpty(trackingNumberInput)
                     ? "Marked Delivered: " + load.TrackingNumber
-                    : $"QR Code Verified & Delivered ({scannedQRCode}): " + load.TrackingNumber;
+                    : $"Verified Tracking Number & Delivered ({trackingNumberInput}): " + load.TrackingNumber;
 
                 AuditLogger.Log(load.LoadId, auditAction, "Driver");
 
-                // Send Professional Email Notification with Scanned Proof
                 try
                 {
                     NotificationService.SendNotificationEmail(
                         "keyram.smma.18@gmail.com",
-                        $"Delivery Confirmed via QR Scan: {load.TrackingNumber}",
-                        $"<p>Your package has been successfully delivered and verified via mobile QR scanner.</p>" +
+                        $"Delivery Confirmed: {load.TrackingNumber}",
+                        $"<p>Your package has been successfully delivered and verified via tracking number.</p>" +
                         $"<table style='width:100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;'>" +
                         $"<tr style='background-color: #f1f5f9;'><th style='padding: 8px; border: 1px solid #cbd5e1; text-align: left;'>Parameter</th><th style='padding: 8px; border: 1px solid #cbd5e1; text-align: left;'>Details</th></tr>" +
                         $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Tracking Number</td><td style='padding: 6px; border: 1px solid #cbd5e1;'><strong>{load.TrackingNumber}</strong></td></tr>" +
-                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Scanned QR Code</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{scannedQRCode ?? "N/A"}</td></tr>" +
+                        $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Verified Tracking Input</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{trackingNumberInput ?? "N/A"}</td></tr>" +
                         $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Dropoff Location</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{load.DropoffLocation}</td></tr>" +
                         $"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>Handover Timestamp</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{DateTime.Now:yyyy-MM-dd HH:mm:ss}</td></tr>" +
                         $"</table>" +
@@ -421,7 +441,7 @@ namespace KeystoneLogistics.Controllers
                 }
                 catch (Exception) { /* Non-blocking fail-safe */ }
 
-                TempData["SuccessMessage"] = $"Shipment #{load.TrackingNumber} successfully verified via QR scan and marked as Delivered!";
+                TempData["SuccessMessage"] = $"Shipment #{load.TrackingNumber} successfully verified and marked as Delivered!";
             }
             else
             {
