@@ -1,0 +1,219 @@
+﻿:root {
+    --bg-color: #f4f6f9;
+    --text-color: #2c3e50;
+    --card-bg: #ffffff;
+    --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    --table-th-bg: #f8fafc;
+    --table-th-color: #64748b;
+    --table-th-border: #e2e8f0;
+    --table-td-color: #1e293b;
+    --table-border: #f1f5f9;
+    --table-row-hover: #f8fafc;
+    --action-edit-bg: #f1f5f9;
+    --action-edit-color: #334155;
+    --action-edit-hover-bg: #e2e8f0;
+    --action-edit-hover-color: #0f172a;
+    --action-details-bg: #eff6ff;
+    --action-details-color: #2563eb;
+    --action-details-hover-bg: #dbeafe;
+    --action-details-hover-color: #1d4ed8;
+}
+
+body.dark-mode {
+    --bg-color: #0f172a;
+    --text-color: #f8fafc;
+    --card-bg: #1e293b;
+    --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --table-th-bg: #0f172a;
+    --table-th-color: #94a3b8;
+    --table-th-border: #334155;
+    --table-td-color: #f1f5f9;
+    --table-border: #334155;
+    --table-row-hover: #273548;
+    --action-edit-bg: #334155;
+    --action-edit-color: #f1f5f9;
+    --action-edit-hover-bg: #475569;
+    --action-edit-hover-color: #ffffff;
+    --action-details-bg: rgba(37, 99, 235, 0.2);
+    --action-details-color: #60a5fa;
+    --action-details-hover-bg: rgba(37, 99, 235, 0.4);
+    --action-details-hover-color: #93c5fd;
+}
+
+/* Core Layout */
+body {
+    background-color: var(--bg-color);
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.body-content {
+    margin-top: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+/* Executive Stat Cards */
+.stat-card {
+    border-radius: 12px;
+    padding: 24px;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-card .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .stat-card .stat-label {
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin-top: 8px;
+        opacity: 0.9;
+        font-weight: 600;
+    }
+
+.bg-primary-grad {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.bg-warning-grad {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #ffffff !important;
+}
+
+.bg-success-grad {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.bg-info-grad {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    color: #ffffff !important;
+}
+
+/* Custom Executive Table Styling */
+.executive-card {
+    background: var(--card-bg);
+    border: none;
+    border-radius: 14px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.executive-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+    .executive-table th {
+        background-color: var(--table-th-bg);
+        color: var(--table-th-color);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-weight: 700;
+        padding: 16px;
+        border-bottom: 2px solid var(--table-th-border);
+    }
+
+    .executive-table td {
+        padding: 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--table-border);
+        color: var(--table-td-color);
+        font-size: 0.92rem;
+    }
+
+    .executive-table tbody tr {
+        transition: background-color 0.15s ease;
+    }
+
+        .executive-table tbody tr:hover {
+            background-color: var(--table-row-hover);
+        }
+
+/* Status Badges */
+.badge-status {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 20px;
+    display: inline-block;
+    text-transform: capitalize;
+}
+
+.badge-status-dispatched {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-status-enroute {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.badge-status-delivered {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+/* Driver Availability Badges */
+.badge-driver-available {
+    background-color: #d1fae5;
+    color: #065f46;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
+.badge-driver-busy {
+    background-color: #fee2e2;
+    color: #991b1b;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
+/* Quick Action Buttons */
+.btn-action-edit {
+    background-color: var(--action-edit-bg);
+    color: var(--action-edit-color);
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 5px 12px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+    .btn-action-edit:hover {
+        background-color: var(--action-edit-hover-bg);
+        color: var(--action-edit-hover-color);
+        text-decoration: none;
+    }
+
+.btn-action-details {
+    background-color: var(--action-details-bg);
+    color: var(--action-details-color);
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 5px 12px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+    .btn-action-details:hover {
+        background-color: var(--action-details-hover-bg);
+        color: var(--action-details-hover-color);
+        text-decoration: none;
+    }

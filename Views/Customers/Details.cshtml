@@ -1,0 +1,100 @@
+﻿@model KeystoneLogistics.Models.Customer
+
+@{
+    ViewBag.Title = "Customer Details";
+}
+
+<div class="container py-5" style="position: relative; z-index: 10; min-height: 80vh; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #0f172a 60%, #0b1120 100%);">
+    <!-- Page Header -->
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-transparent p-0 mb-2">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Customers")" class="text-info text-decoration-none">Customers</a></li>
+                    <li class="breadcrumb-item active text-muted" aria-current="page">Details</li>
+                </ol>
+            </nav>
+            <h1 class="font-weight-bold text-white mb-1"><i class="fa-solid fa-address-card text-info mr-2"></i>Customer Details</h1>
+            <p class="text-muted small mb-0">Comprehensive profile and contact information for @Model.CompanyName</p>
+        </div>
+        <div class="col-auto">
+            <a href="@Url.Action("Index", "Customers")" class="btn btn-outline-light btn-sm font-weight-bold px-3">
+                <i class="fa-solid fa-arrow-left mr-2"></i>Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Details Glass Card -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0" style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12) !important; border-radius: 20px; color: #ffffff;">
+                <div class="card-body p-5">
+
+                    <!-- Company Header Badge & Title -->
+                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: rgba(255, 255, 255, 0.08) !important;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 60px; height: 60px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; font-size: 24px; flex-shrink: 0;">
+                            <i class="fa-solid fa-building"></i>
+                        </div>
+                        <div>
+                            <span class="badge text-uppercase mb-1" style="font-size: 10px; letter-spacing: 1.5px; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); padding: 4px 10px; border-radius: 6px;">Registered Account</span>
+                            <h3 class="font-weight-bold text-white mb-0">@Model.CompanyName</h3>
+                        </div>
+                    </div>
+
+                    <!-- Details Grid -->
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="p-3 rounded" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.06);">
+                                <div class="text-uppercase font-weight-bold text-muted small mb-1" style="letter-spacing: 0.5px;">
+                                    <i class="fa-solid fa-user text-info mr-1"></i> @Html.DisplayNameFor(model => model.ContactPerson)
+                                </div>
+                                <div class="font-weight-bold text-white" style="font-size: 16px;">
+                                    @Model.ContactPerson
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="p-3 rounded" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.06);">
+                                <div class="text-uppercase font-weight-bold text-muted small mb-1" style="letter-spacing: 0.5px;">
+                                    <i class="fa-solid fa-phone text-info mr-1"></i> @Html.DisplayNameFor(model => model.Phone)
+                                </div>
+                                <div class="font-weight-bold text-white" style="font-size: 16px;">
+                                    <a href="tel:@Model.Phone" class="text-white text-decoration-none hover-info">@Model.Phone</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mb-4">
+                            <div class="p-3 rounded" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.06);">
+                                <div class="text-uppercase font-weight-bold text-muted small mb-1" style="letter-spacing: 0.5px;">
+                                    <i class="fa-solid fa-envelope text-info mr-1"></i> @Html.DisplayNameFor(model => model.Email)
+                                </div>
+                                <div class="font-weight-bold text-white" style="font-size: 16px;">
+                                    <a href="mailto:@Model.Email" class="text-info text-decoration-none">@Model.Email</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Footer Buttons -->
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top" style="border-color: rgba(255, 255, 255, 0.08) !important;">
+                        <a href="@Url.Action("Index", "Customers")" class="btn btn-outline-secondary btn-sm px-4">
+                            <i class="fa-solid fa-arrow-left mr-2"></i>Back to List
+                        </a>
+                        <a href="@Url.Action("Edit", "Customers", new { id = Model.CustomerId })" class="btn btn-info btn-sm px-4 font-weight-bold text-dark shadow-sm" style="background-color: #38bdf8; border-color: #38bdf8;">
+                            <i class="fa-solid fa-pen-to-square mr-2"></i>Edit Customer
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-info:hover {
+        color: #38bdf8 !important;
+    }
+</style>

@@ -1,0 +1,394 @@
+﻿@{
+    string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    string userRole = Session["UserRole"]?.ToString() ?? "";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - Keystone Logistics</title>
+
+    <!-- Bootstrap 4.6 & FontAwesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-main: #090d16;
+            --text-main: #ffffff; /* Pure white text for Dark Mode */
+            --glass-card: rgba(15, 23, 42, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --navbar-bg: rgba(9, 13, 22, 0.95);
+            --footer-bg: rgba(9, 13, 22, 0.95);
+            --table-th-bg: #1e293b;
+            --table-th-color: #ffffff;
+            --table-td-color: #ffffff;
+            --table-hover-bg: rgba(255, 255, 255, 0.08);
+            --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            --radial-gradient: radial-gradient(circle at 50% 0%, rgba(30, 41, 59, 0.6) 0%, rgba(9, 13, 22, 1) 75%);
+        }
+
+        body.light-mode {
+            --bg-main: #f1f5f9;
+            --text-main: #000000; /* Pure black text for Light Mode */
+            --glass-card: #ffffff;
+            --glass-border: rgba(0, 0, 0, 0.15);
+            --navbar-bg: rgba(255, 255, 255, 0.98);
+            --footer-bg: rgba(255, 255, 255, 0.98);
+            --table-th-bg: #e2e8f0;
+            --table-th-color: #000000;
+            --table-td-color: #000000;
+            --table-hover-bg: rgba(0, 0, 0, 0.04);
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            --radial-gradient: #f1f5f9;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Enforce absolute color mapping: White in dark mode, Black in light mode */
+        body, h1, h2, h3, h4, h5, h6,
+        .h1, .h2, .h3, .h4, .h5, .h6,
+        p, span, a, li, label, .form-label, .col-form-label, .text-muted, .text-white, .text-light {
+            color: var(--text-main) !important;
+        }
+
+        .main-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--radial-gradient);
+            transition: background 0.3s ease;
+        }
+
+        .content-body {
+            flex: 1 0 auto;
+            padding-top: 40px;
+            padding-bottom: 60px;
+        }
+
+        /* Form Controls & Inputs */
+        .form-control {
+            background-color: var(--glass-card) !important;
+            color: var(--text-main) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-weight: 500;
+            height: auto;
+        }
+
+            .form-control:focus {
+                border-color: #38bdf8 !important;
+                box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+            }
+
+        /* Glassmorphism Navbar */
+        .navbar-glass {
+            background: var(--navbar-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 14px 28px;
+        }
+
+            .navbar-glass .navbar-brand {
+                color: var(--text-main) !important;
+                font-weight: 700;
+                font-size: 1.15rem;
+                letter-spacing: 0.5px;
+            }
+
+            .navbar-glass .nav-link {
+                color: var(--text-main) !important;
+                font-weight: 500;
+                font-size: 0.9rem;
+                padding: 8px 16px !important;
+                border-radius: 8px;
+                opacity: 0.85;
+                transition: all 0.2s ease;
+            }
+
+                .navbar-glass .nav-link:hover,
+                .navbar-glass .nav-item.active .nav-link {
+                    opacity: 1;
+                    background: var(--glass-border);
+                }
+
+        /* Card Container Styling */
+        .data-card, .card {
+            background: var(--glass-card) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            color: var(--text-main) !important;
+            padding: 28px;
+            overflow: hidden;
+        }
+
+        /* Tables */
+        .table {
+            color: var(--text-main) !important;
+            margin-bottom: 0;
+            background-color: transparent !important;
+        }
+
+            .table thead,
+            .table thead tr,
+            .table thead th,
+            .table .thead-light th,
+            .thead-light th {
+                background-color: var(--table-th-bg) !important;
+                color: var(--table-th-color) !important;
+                font-weight: 700 !important;
+                font-size: 0.8rem !important;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+                border-bottom: 2px solid var(--glass-border) !important;
+                border-top: none !important;
+                padding: 16px !important;
+            }
+
+            .table td {
+                color: var(--table-td-color) !important;
+                border-top: 1px solid var(--glass-border) !important;
+                vertical-align: middle;
+                padding: 16px;
+                font-weight: 500;
+            }
+
+                .table td span:not(.badge), .table td code {
+                    color: var(--text-main) !important;
+                    background: transparent !important;
+                }
+
+        .table-hover tbody tr:hover {
+            background-color: var(--table-hover-bg) !important;
+        }
+
+        /* Footer */
+        .footer-glass {
+            background: var(--footer-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 40px 0 20px 0;
+            font-size: 0.875rem;
+            margin-top: auto;
+        }
+
+            .footer-glass h6 {
+                color: var(--text-main);
+                font-weight: 700;
+                margin-bottom: 16px;
+                text-transform: uppercase;
+                font-size: 0.75rem;
+                letter-spacing: 1px;
+            }
+
+            .footer-glass ul {
+                list-style: none;
+                padding-left: 0;
+                margin-bottom: 0;
+            }
+
+                .footer-glass ul li {
+                    margin-bottom: 10px;
+                }
+
+                    .footer-glass ul li a {
+                        color: var(--text-main);
+                        text-decoration: none;
+                        opacity: 0.8;
+                        transition: opacity 0.2s;
+                    }
+
+                        .footer-glass ul li a:hover {
+                            opacity: 1;
+                        }
+
+        .btn-glass-primary {
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: var(--text-main) !important;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 8px 20px;
+            transition: all 0.2s ease;
+        }
+
+            .btn-glass-primary:hover {
+                background: rgba(56, 189, 248, 0.3);
+                border-color: rgba(56, 189, 248, 0.6);
+            }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+
+        <!-- Glass Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-glass sticky-top">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center" href="@Url.Action("Index", "Home")">
+                    <i class="fa-solid fa-truck-fast text-info mr-2"></i> KEYSTONE LOGISTICS
+                </a>
+
+                <button class="navbar-toggler border-0" type="button" data-toggle="collapse" data-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    @if (Session["Username"] != null)
+                    {
+                        <ul class="navbar-nav mr-auto ml-lg-4">
+                            <li class="nav-item @(currentController == "Home" && currentAction == "Index" ? "active" : "")">
+                                <a class="nav-link" href="@Url.Action("Index", "Home")">Home</a>
+                            </li>
+                            <li class="nav-item @(currentController == "Home" && currentAction == "About" ? "active" : "")">
+                                <a class="nav-link" href="@Url.Action("About", "Home")">About Us</a>
+                            </li>
+                            <li class="nav-item @(currentController == "Loads" && currentAction == "Index" ? "active" : "")">
+                                <a class="nav-link" href="@Url.Action("Index", "Loads")">Freight Loads</a>
+                            </li>
+                            @if (userRole == "Admin")
+                            {
+                                <li class="nav-item @(currentController == "Customers" ? "active" : "")">
+                                    <a class="nav-link" href="@Url.Action("Index", "Customers")">Customers</a>
+                                </li>
+                                <li class="nav-item @(currentController == "Drivers" ? "active" : "")">
+                                    <a class="nav-link" href="@Url.Action("Index", "Drivers")">Drivers</a>
+                                </li>
+                            }
+                            <li class="nav-item @(currentController == "Home" && currentAction == "Contact" ? "active" : "")">
+                                <a class="nav-link" href="@Url.Action("Contact", "Home")">Contact</a>
+                            </li>
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="mr-auto"></div>
+                    }
+
+                    <!-- User Status / Theme Switcher -->
+                    <ul class="navbar-nav ml-auto align-items-center">
+                        <li class="nav-item dropdown mr-3">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="themeDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa-solid fa-palette mr-1"></i> Theme
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right shadow-lg border-0" aria-labelledby="themeDropdown">
+                                <a class="dropdown-item py-2" href="#" onclick="setTheme('light')"><i class="fa-solid fa-sun mr-2 text-warning"></i> Light Mode</a>
+                                <a class="dropdown-item py-2" href="#" onclick="setTheme('dark')"><i class="fa-solid fa-moon mr-2 text-info"></i> Dark Mode</a>
+                            </div>
+                        </li>
+                        @if (Session["Username"] != null)
+                        {
+                            <li class="nav-item mr-3">
+                                <span class="small d-flex align-items-center">
+                                    <i class="fa-regular fa-circle-user mr-1 text-info font-weight-bold"></i>
+                                    <strong class="mr-1">@Session["Username"]</strong>
+                                    <span class="badge px-2 py-1" style="background: rgba(56,189,248,0.2); color: var(--text-main);">@Session["UserRole"]</span>
+                                </span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn btn-outline-danger btn-sm rounded-pill px-3" href="@Url.Action("Logout", "Account")">
+                                    Logout
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="btn btn-glass-primary btn-sm" href="@Url.Action("Login", "Account")">
+                                    <i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> Sign In
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Body Content -->
+        <div class="content-body">
+            @RenderBody()
+        </div>
+
+        <!-- Footer -->
+        @if (Session["Username"] != null)
+        {
+            <footer class="footer-glass">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <h6>Keystone Logistics</h6>
+                            <p class="small mb-2">Streamlined logistics and freight management solutions across KZN corridors.</p>
+                            <p class="small mb-0"><i class="fa-solid fa-location-dot mr-1"></i> Durban, South Africa</p>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <h6>Quick Links</h6>
+                            <ul>
+                                <li><a href="@Url.Action("About", "Home")">About Company</a></li>
+                                <li><a href="@Url.Action("Index", "Loads")">Loads Overview</a></li>
+                                <li><a href="@Url.Action("Contact", "Home")">Support Portal</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <h6>Dispatch Support</h6>
+                            <p class="small mb-2">Need immediate operational assistance?</p>
+                            <a href="https://wa.me/27311234567" target="_blank" class="btn btn-sm border-0 shadow-sm" style="background: rgba(16, 185, 129, 0.2); font-weight: 600;">
+                                <i class="fa-brands fa-whatsapp mr-1"></i> WhatsApp Support
+                            </a>
+                        </div>
+                    </div>
+                    <div class="text-center pt-3 mt-3 border-top" style="border-color: var(--glass-border) !important;">
+                        <span class="small">&copy; @DateTime.Now.Year Keystone Logistics. All rights reserved.</span>
+                    </div>
+                </div>
+            </footer>
+        }
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Theme Switcher Script -->
+    <script>
+        function setTheme(mode) {
+            if (mode === 'light') {
+                document.body.classList.add('light-mode');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.body.classList.remove('light-mode');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+            }
+        })();
+    </script>
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,236 @@
+﻿@{
+    ViewBag.Title = "About Us";
+}
+
+<style>
+    .glass-card-dark {
+        background: rgba(255, 255, 255, 0.03) !important;
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+        transition: all 0.25s ease-in-out;
+        color: #f8fafc;
+    }
+
+        .glass-card-dark:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.06) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+        }
+
+    .modal-glass .modal-content {
+        background: rgba(15, 23, 42, 0.92) !important;
+        backdrop-filter: blur(24px) saturate(200%);
+        -webkit-backdrop-filter: blur(24px) saturate(200%);
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 18px !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+        color: #f8fafc;
+    }
+
+    .modal-glass .modal-header,
+    .modal-glass .modal-footer {
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .modal-glass .close {
+        color: #94a3b8;
+        text-shadow: none;
+        opacity: 0.8;
+    }
+
+        .modal-glass .close:hover {
+            color: #ffffff;
+            opacity: 1;
+        }
+</style>
+
+<div class="container py-2">
+    <!-- Header Section -->
+    <div class="mb-5 text-center">
+        <h1 class="font-weight-bold text-white display-4">About Keystone Logistics</h1>
+        <p class="lead mx-auto" style="max-width: 700px; color: #cbd5e1;">
+            Providing reliable freight dispatch, regional commercial fleet operations, and digital shipment management.
+        </p>
+    </div>
+
+    <!-- Overview Banner Glass Card -->
+    <div class="glass-card-dark p-4 p-md-5 mb-5">
+        <div class="row align-items-center">
+            <div class="col-lg-7 mb-4 mb-lg-0">
+                <span class="badge badge-pill px-3 py-2 mb-3" style="background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.15); font-weight: 600;">
+                    Commercial Infrastructure
+                </span>
+                <h2 class="font-weight-bold text-white mb-3">Connecting Supply Chains Across KZN</h2>
+                <p style="color: #94a3b8; line-height: 1.8; font-size: 1rem;">
+                    Keystone Logistics manages end-to-end commercial freight dispatch across South Africa’s key industrial transit corridors. By integrating live driver assignments, client account management, and real-time shipment updates, we deliver accountable freight services to commercial clients.
+                </p>
+            </div>
+            <div class="col-lg-5">
+                <div class="p-4 rounded-lg" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fa-solid fa-shield-halved fa-2x text-light mr-3"></i>
+                        <div>
+                            <h6 class="font-weight-bold text-white mb-0">Verified Driver Network</h6>
+                            <small style="color: #94a3b8;">Full PrDP compliance & telemetry</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fa-solid fa-truck-fast fa-2x text-light mr-3"></i>
+                        <div>
+                            <h6 class="font-weight-bold text-white mb-0">Scheduled Departures</h6>
+                            <small style="color: #94a3b8;">Durban, PMB, and Richards Bay</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="fa-solid fa-clock-rotate-left fa-2x text-light mr-3"></i>
+                        <div>
+                            <h6 class="font-weight-bold text-white mb-0">Live Load Tracking</h6>
+                            <small style="color: #94a3b8;">Instant status logs & waybill search</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Operational Pillars (With Glass Pop-up Modals) -->
+    <div class="text-center mb-4">
+        <h3 class="font-weight-bold text-white">Our Operational Pillars</h3>
+        <p style="color: #94a3b8;">Click on any pillar to open its detailed operational breakdown in a glass modal card.</p>
+    </div>
+
+    <div class="row">
+        <!-- Pillar 1 -->
+        <div class="col-md-4 mb-4">
+            <div class="glass-card-dark p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <i class="fa-solid fa-bullseye fa-2x mb-3 text-light"></i>
+                    <h5 class="font-weight-bold text-white">Precision Timelines</h5>
+                    <p style="color: #94a3b8; font-size: 0.92rem; line-height: 1.6;">
+                        Strict schedule compliance for port clearances, warehouse drops, and manufacturing deliveries.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-sm text-left font-weight-bold p-0 mt-3 text-light" data-toggle="modal" data-target="#precisionModal" style="background: none; border: none;">
+                    Learn More <i class="fa-solid fa-arrow-right ml-1 small"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Pillar 2 -->
+        <div class="col-md-4 mb-4">
+            <div class="glass-card-dark p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <i class="fa-solid fa-clipboard-check fa-2x mb-3 text-light"></i>
+                    <h5 class="font-weight-bold text-white">Chain of Custody</h5>
+                    <p style="color: #94a3b8; font-size: 0.92rem; line-height: 1.6;">
+                        Digital waybills and verification steps ensure cargo security from pickup to dropoff.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-sm text-left font-weight-bold p-0 mt-3 text-light" data-toggle="modal" data-target="#custodyModal" style="background: none; border: none;">
+                    Learn More <i class="fa-solid fa-arrow-right ml-1 small"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Pillar 3 -->
+        <div class="col-md-4 mb-4">
+            <div class="glass-card-dark p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <i class="fa-solid fa-headset fa-2x mb-3 text-light"></i>
+                    <h5 class="font-weight-bold text-white">Dedicated Support</h5>
+                    <p style="color: #94a3b8; font-size: 0.92rem; line-height: 1.6;">
+                        Direct access to dispatch controllers and fleet managers for real-time order inquiries.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-sm text-left font-weight-bold p-0 mt-3 text-light" data-toggle="modal" data-target="#supportModal" style="background: none; border: none;">
+                    Learn More <i class="fa-solid fa-arrow-right ml-1 small"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= ABOUT PAGE POP-UP GLASS MODALS ================= -->
+<!-- Modal 1: Precision Timelines -->
+<div class="modal fade modal-glass" id="precisionModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold text-white">
+                    <i class="fa-solid fa-bullseye mr-2 text-muted"></i> Precision Timelines Standard
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="color: #cbd5e1; line-height: 1.7;">
+                <p>We maintain strict schedule compliance across all routes through:</p>
+                <ul class="pl-3 mb-0">
+                    <li class="mb-2"><strong>Pre-Trip Audits:</strong> Daily safety and route readiness checks prior to dispatch.</li>
+                    <li class="mb-2"><strong>Staggered Departure Windows:</strong> Optimized slotting to prevent congestion at port terminals.</li>
+                    <li class="mb-2"><strong>SLA Commitments:</strong> Guaranteed pickup timeframes for scheduled commercial clients.</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-light" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Chain of Custody -->
+<div class="modal fade modal-glass" id="custodyModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold text-white">
+                    <i class="fa-solid fa-clipboard-check mr-2 text-muted"></i> Chain of Custody Standards
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="color: #cbd5e1; line-height: 1.7;">
+                <p>Digital tracking ensures end-to-end accountability:</p>
+                <ul class="pl-3 mb-0">
+                    <li class="mb-2"><strong>Digital Sign-off:</strong> Instant waybill verification upon cargo loading and dropoff.</li>
+                    <li class="mb-2"><strong>Tamper Protocol:</strong> Seal verification logged at every intermediate hub.</li>
+                    <li class="mb-2"><strong>Audit Trails:</strong> Historical logs maintained in database for complete transparency.</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-light" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: Dedicated Support -->
+<div class="modal fade modal-glass" id="supportModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold text-white">
+                    <i class="fa-solid fa-headset mr-2 text-muted"></i> Dispatch Support Services
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="color: #cbd5e1; line-height: 1.7;">
+                <p>Direct communication channels for registered clients:</p>
+                <ul class="pl-3 mb-0">
+                    <li class="mb-2"><strong>Central Dispatch Control:</strong> Monitored phone and email lines during operating hours.</li>
+                    <li class="mb-2"><strong>WhatsApp Fast-Track:</strong> Quick assistance via the bottom banner support button.</li>
+                    <li class="mb-2"><strong>Dedicated Account Managers:</strong> Assigned contacts for volume cargo clients.</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-light" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
