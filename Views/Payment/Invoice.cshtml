@@ -1,0 +1,124 @@
+﻿@model KeystoneLogistics.Models.Load
+@{
+    Layout = null;
+    var amount = (decimal)(ViewBag.Amount ?? 0m);
+    var vatRate = 0.15m;
+    var subtotal = Math.Round(amount / (1 + vatRate), 2);
+    var vat = amount - subtotal;
+    var invoiceNo = ViewBag.InvoiceNumber as string ?? ("INV-" + Model.TrackingNumber);
+    var customerName = ViewBag.CustomerName as string ?? "Customer";
+    var customerEmail = ViewBag.CustomerEmail as string ?? "";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Tax Invoice @invoiceNo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #3A3226;
+            max-width: 800px;
+            margin: 30px auto;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        .muted {
+            color: #6B6358;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #d6cbb8;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #EBE3D4;
+        }
+
+        .totals td {
+            border: none;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 16px;
+            background: #2F6F5E;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+
+        @@media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <a href="javascript:window.print()" class="btn">Print / Save as PDF</a>
+        <a href="@Url.Action("Index", "Loads")" class="btn" style="background:#7A6E5C;">Back</a>
+    </div>
+
+    <h1>KEYSTONE LOGISTICS</h1>
+    <p class="muted">Durban, KwaZulu-Natal, South Africa<br />TAX INVOICE</p>
+
+    <p>
+        <strong>Invoice No:</strong> @invoiceNo<br />
+        <strong>Date:</strong> @DateTime.Now.ToString("yyyy-MM-dd")<br />
+        <strong>Tracking:</strong> @Model.TrackingNumber
+    </p>
+
+    <p>
+        <strong>Bill To:</strong><br />
+        @customerName<br />
+        @customerEmail
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="right">Amount (ZAR)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    Freight delivery — @Model.TrackingNumber<br />
+                    <span class="muted">@Model.PickupLocation → @Model.DropoffLocation</span><br />
+                    <span class="muted">@Model.CargoDescription</span>
+                </td>
+                <td class="right">R @subtotal.ToString("N2")</td>
+            </tr>
+            <tr>
+                <td>VAT @((vatRate * 100).ToString("0"))%</td>
+                <td class="right">R @vat.ToString("N2")</td>
+            </tr>
+            <tr>
+                <td><strong>Total</strong></td>
+                <td class="right"><strong>R @amount.ToString("N2")</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p class="muted">Paid via PayFast sandbox. This document is a system-generated tax invoice for @Model.TrackingNumber.</p>
+</body>
+</html>

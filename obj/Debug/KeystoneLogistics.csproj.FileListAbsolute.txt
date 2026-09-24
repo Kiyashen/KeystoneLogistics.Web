@@ -56,6 +56,7 @@ C:\webapp\KeystoneLogistics\bin\EntityFramework.SqlServer.dll
 C:\webapp\KeystoneLogistics\bin\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll
 C:\webapp\KeystoneLogistics\bin\Microsoft.Web.Infrastructure.dll
 C:\webapp\KeystoneLogistics\bin\Newtonsoft.Json.dll
+C:\webapp\KeystoneLogistics\bin\QRCoder.dll
 C:\webapp\KeystoneLogistics\bin\System.Web.Helpers.dll
 C:\webapp\KeystoneLogistics\bin\System.Web.Mvc.dll
 C:\webapp\KeystoneLogistics\bin\System.Web.Optimization.dll
@@ -66,6 +67,7 @@ C:\webapp\KeystoneLogistics\bin\System.Web.WebPages.Razor.dll
 C:\webapp\KeystoneLogistics\bin\WebGrease.dll
 C:\webapp\KeystoneLogistics\bin\EntityFramework.xml
 C:\webapp\KeystoneLogistics\bin\EntityFramework.SqlServer.xml
+C:\webapp\KeystoneLogistics\bin\QRCoder.xml
 C:\webapp\KeystoneLogistics\bin\System.Web.Helpers.xml
 C:\webapp\KeystoneLogistics\bin\System.Web.Mvc.xml
 C:\webapp\KeystoneLogistics\bin\System.Web.Optimization.xml
@@ -81,5 +83,3 @@ C:\webapp\KeystoneLogistics\obj\Debug\KeystoneLogistics.csproj.CoreCompileInputs
 C:\webapp\KeystoneLogistics\obj\Debug\Keystone.6799F759.Up2Date
 C:\webapp\KeystoneLogistics\obj\Debug\KeystoneLogistics.dll
 C:\webapp\KeystoneLogistics\obj\Debug\KeystoneLogistics.pdb
-C:\webapp\KeystoneLogistics\bin\QRCoder.dll
-C:\webapp\KeystoneLogistics\bin\QRCoder.xml

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Mail;
 
@@ -18,32 +19,40 @@ namespace KeystoneLogistics.Services
         {
             try
             {
-                var client = new SmtpClient("smtp.gmail.com", 587)
+                using (var client = new SmtpClient("smtp.gmail.com", 587))
                 {
-                    Credentials = new NetworkCredential(SmtpUser, SmtpPass),
-                    EnableSsl = true
-                };
+                    client.Credentials = new NetworkCredential(SmtpUser, SmtpPass);
+                    client.EnableSsl = true;
 
-                var mailMessage = new MailMessage
-                {
-                    From = new MailAddress(SmtpUser, "Keystone Logistics Dispatch"),
-                    Subject = subject,
-                    Body = GetProfessionalTemplate(subject, messageBody),
-                    IsBodyHtml = true,
-                };
+                    using (var mailMessage = new MailMessage())
+                    {
+                        mailMessage.From = new MailAddress(SmtpUser, "Keystone Logistics Dispatch");
+                        mailMessage.Subject = subject;
+                        mailMessage.Body = GetProfessionalTemplate(subject, messageBody);
+                        mailMessage.IsBodyHtml = true;
+                        mailMessage.To.Add(recipientEmail);
 
-                mailMessage.To.Add(recipientEmail);
+                        if (attachment != null)
+                        {
+                            mailMessage.Attachments.Add(attachment);
+                        }
 
-                if (attachment != null)
-                {
-                    mailMessage.Attachments.Add(attachment);
+                        client.Send(mailMessage);
+                    }
                 }
-
-                client.Send(mailMessage);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Notification failed: {ex.Message}");
+                string logPath = @"C:\KeystoneLogs\Errors\EmailError.log";
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(logPath));
+                    File.AppendAllText(logPath, $"{DateTime.Now}: Failed to send email to {recipientEmail}. Error: {ex}\n");
+                }
+                catch
+                {
+                    // Suppress if file system logging fails
+                }
             }
         }
 

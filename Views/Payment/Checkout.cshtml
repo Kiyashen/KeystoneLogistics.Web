@@ -1,0 +1,74 @@
+﻿@model KeystoneLogistics.Models.Load
+
+@{
+    ViewBag.Title = "Secure Checkout";
+    var load = Model;
+}
+
+<div class="container mt-5" style="max-width: 600px;">
+    <div class="card shadow-sm p-4">
+        <h3 class="mb-3 text-primary">PayFast Secure Checkout</h3>
+        <hr />
+
+        <p><strong>Tracking Number:</strong> @load.TrackingNumber</p>
+        <p><strong>Pickup:</strong> @load.PickupLocation</p>
+        <p><strong>Dropoff:</strong> @load.DropoffLocation</p>
+
+        <!-- ====== UPDATED AMOUNT SECTION ====== -->
+        <p class="mb-1">
+            <strong>Amount Payable:</strong>
+            <span class="h4 text-success font-weight-bold">
+                R @(((decimal)ViewBag.Amount).ToString("N2")) ZAR
+            </span>
+        </p>
+
+        <div class="small text-muted mb-4 border-left border-primary pl-3">
+            <div>Base fee: R @(((decimal)ViewBag.BaseFee).ToString("N2"))</div>
+
+            @if (ViewBag.DistanceKm != null && (decimal)ViewBag.DistanceKm > 0)
+            {
+                <div>
+                    Distance (@(((decimal)ViewBag.DistanceKm).ToString("N1")) km × R12):
+                    R @(((decimal)ViewBag.DistanceCharge).ToString("N2"))
+                </div>
+            }
+
+            @if (ViewBag.WeightKg != null && (decimal)ViewBag.WeightKg > 0)
+            {
+                <div>
+                    Weight surcharge (@(((decimal)ViewBag.WeightKg).ToString("N0")) kg × R1.50):
+                    R @(((decimal)ViewBag.WeightCharge).ToString("N2"))
+                </div>
+            }
+        </div>
+        <!-- =================================== -->
+
+        <form action="@ViewBag.PayFastUrl" method="POST" class="mt-4">
+            <input type="hidden" name="merchant_id" value="@ViewBag.MerchantId" />
+            <input type="hidden" name="merchant_key" value="@ViewBag.MerchantKey" />
+            <input type="hidden" name="return_url" value="@ViewBag.ReturnUrl" />
+            <input type="hidden" name="cancel_url" value="@ViewBag.CancelUrl" />
+            <input type="hidden" name="notify_url" value="@ViewBag.NotifyUrl" />
+
+            <input type="hidden" name="m_payment_id" value="@load.LoadId" />
+
+            <!-- Important: always use InvariantCulture so PayFast gets a dot (.) not a comma -->
+            <input type="hidden" name="amount"
+                   value="@(((decimal)ViewBag.Amount).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))" />
+
+            <input type="hidden" name="item_name" value="Keystone Logistics - @load.TrackingNumber" />
+
+            <!-- Required buyer details -->
+            <input type="hidden" name="name_first" value="Customer" />
+            <input type="hidden" name="email_address" value="customer@keystonelogistics.co.za" />
+
+            <button type="submit" class="btn btn-success btn-lg btn-block">
+                Pay Securely with PayFast
+            </button>
+
+            <a href="@Url.Action("Index", "Loads")" class="btn btn-outline-secondary btn-block mt-2">
+                Cancel & Return
+            </a>
+        </form>
+    </div>
+</div>
