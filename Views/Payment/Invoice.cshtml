@@ -46,10 +46,6 @@
             background: #EBE3D4;
         }
 
-        .totals td {
-            border: none;
-        }
-
         .right {
             text-align: right;
         }
@@ -57,12 +53,30 @@
         .btn {
             display: inline-block;
             margin-top: 20px;
+            margin-right: 8px;
             padding: 10px 16px;
             background: #2F6F5E;
             color: #fff;
             text-decoration: none;
+            border: none;
             border-radius: 6px;
+            cursor: pointer;
         }
+
+        .review-box {
+            margin-top: 24px;
+            padding: 16px;
+            border: 1px solid #d6cbb8;
+            border-radius: 8px;
+            background: #FFFCF7;
+        }
+
+            .review-box select, .review-box textarea {
+                width: 100%;
+                margin-bottom: 10px;
+                padding: 8px;
+                box-sizing: border-box;
+            }
 
         @@media print {
             .no-print {
@@ -76,22 +90,18 @@
         <a href="javascript:window.print()" class="btn">Print / Save as PDF</a>
         <a href="@Url.Action("Index", "Loads")" class="btn" style="background:#7A6E5C;">Back</a>
     </div>
-
     <h1>KEYSTONE LOGISTICS</h1>
     <p class="muted">Durban, KwaZulu-Natal, South Africa<br />TAX INVOICE</p>
-
     <p>
         <strong>Invoice No:</strong> @invoiceNo<br />
         <strong>Date:</strong> @DateTime.Now.ToString("yyyy-MM-dd")<br />
         <strong>Tracking:</strong> @Model.TrackingNumber
     </p>
-
     <p>
         <strong>Bill To:</strong><br />
         @customerName<br />
         @customerEmail
     </p>
-
     <table>
         <thead>
             <tr>
@@ -118,7 +128,25 @@
             </tr>
         </tbody>
     </table>
-
     <p class="muted">Paid via PayFast sandbox. This document is a system-generated tax invoice for @Model.TrackingNumber.</p>
+
+    <div class="review-box no-print">
+        <h3 style="margin-top:0;">Leave a review</h3>
+        <p class="muted">Optional. If you submit it, it appears on the home page.</p>
+        @using (Html.BeginForm("Create", "Reviews", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <select name="rating">
+                <option value="5">5 stars</option>
+                <option value="4">4 stars</option>
+                <option value="3">3 stars</option>
+                <option value="2">2 stars</option>
+                <option value="1">1 star</option>
+            </select>
+            <textarea name="comment" rows="3" maxlength="180" placeholder="How was the delivery?"></textarea>
+            <button type="submit" class="btn">Submit review</button>
+            <a href="@Url.Action("Index", "Home")" class="btn" style="background:#7A6E5C;">Skip</a>
+        }
+    </div>
 </body>
 </html>
