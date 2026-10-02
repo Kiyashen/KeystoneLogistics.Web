@@ -1,17 +1,13 @@
 ﻿@{
     ViewBag.Title = "Home";
 }
-
 @model KeystoneLogistics.Models.DashboardViewModel
-
 <style>
-    /* Hero container allowing page scroll */
     .hero-wrapper {
         position: relative;
         width: 100%;
-        height: 350vh;
-        /* Studio Radial Gradient Backdrop: Light slate center transitioning to deep charcoal */
-        background: radial-gradient(circle at 50% 45%, #1e293b 0%, #0f172a 60%, #0b1120 100%);
+        height: 1280vh;
+        background: #0f172a;
     }
 
     #canvas-container {
@@ -20,7 +16,14 @@
         width: 100%;
         height: 100vh;
         overflow: hidden;
+        background: #0f172a;
     }
+
+        #canvas-container canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
 
     #loading-screen {
         position: absolute;
@@ -35,13 +38,12 @@
         z-index: 10;
     }
 
-    /* Professional Glassmorphism Cards */
     .card-overlay {
         position: fixed;
         top: 45%;
         width: 410px;
         padding: 30px;
-        background: rgba(15, 23, 42, 0.75);
+        background: rgba(15, 23, 42, 0.78);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.12);
@@ -53,38 +55,60 @@
         pointer-events: none;
         transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0.6s ease;
         z-index: 5;
-        transform-style: preserve-3d;
-        perspective: 1000px;
     }
 
-    /* Active Spring States */
     .card-left {
         left: 5%;
-        transform: translateY(-50%) translateX(-140px) scale(0.6) rotateY(30deg) rotateX(-15deg);
+        transform: translateY(-50%) translateX(-140px) scale(0.6) rotateY(30deg);
     }
 
-    .card-left.active {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-        transform: translateY(-50%) translateX(0) scale(1) rotateY(0deg) rotateX(0deg);
-        animation: floatAnim 4s ease-in-out 0.8s infinite alternate;
-    }
+        .card-left.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(-50%) translateX(0) scale(1);
+            animation: floatAnim 4s ease-in-out 0.8s infinite alternate;
+        }
 
     .card-right {
         right: 5%;
-        transform: translateY(-50%) translateX(140px) scale(0.6) rotateY(-30deg) rotateX(-15deg);
+        transform: translateY(-50%) translateX(140px) scale(0.6) rotateY(-30deg);
     }
 
-    .card-right.active {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-        transform: translateY(-50%) translateX(0) scale(1) rotateY(0deg) rotateX(0deg);
-        animation: floatAnim 4s ease-in-out 0.8s infinite alternate;
+        .card-right.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(-50%) translateX(0) scale(1);
+            animation: floatAnim 4s ease-in-out 0.8s infinite alternate;
+        }
+
+    .card-center {
+        left: 6%;
+        width: 360px;
+        transform: translateY(-50%) translateX(-80px) scale(0.92);
     }
 
-    /* Subtle Studio Accent Top Line */
+        .card-center.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(-50%) translateX(0) scale(1);
+        }
+
+    .card-finale {
+        left: 50%;
+        width: 460px;
+        transform: translate(-50%, -50%) scale(0.92);
+    }
+
+        .card-finale.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
     .card-overlay::before {
         content: '';
         position: absolute;
@@ -93,10 +117,8 @@
         right: 10%;
         height: 2px;
         background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.6), transparent);
-        border-radius: 2px;
     }
 
-    /* Card Header Layout */
     .card-header-flex {
         display: flex;
         align-items: center;
@@ -133,7 +155,6 @@
         font-weight: 700;
         color: #f8fafc;
         margin-bottom: 8px;
-        letter-spacing: -0.5px;
     }
 
     .card-desc {
@@ -143,7 +164,6 @@
         margin-bottom: 20px;
     }
 
-    /* Spec Data Grid */
     .spec-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -164,7 +184,6 @@
         color: #64748b;
         text-transform: uppercase;
         font-weight: 700;
-        letter-spacing: 0.5px;
         margin-bottom: 3px;
     }
 
@@ -174,11 +193,10 @@
         color: #f8fafc;
     }
 
-    .spec-value.highlight {
-        color: #38bdf8;
-    }
+        .spec-value.highlight {
+            color: #38bdf8;
+        }
 
-    /* Scroll Navigation Dots */
     .scroll-nav {
         position: fixed;
         right: 25px;
@@ -188,7 +206,6 @@
         flex-direction: column;
         gap: 14px;
         z-index: 10;
-        transition: opacity 0.4s ease, visibility 0.4s ease;
     }
 
     .dot {
@@ -197,26 +214,27 @@
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.2);
         border: 1px solid rgba(255, 255, 255, 0.3);
-        transition: all 0.4s ease;
-        cursor: pointer;
     }
 
-    .dot.active {
-        height: 28px;
-        border-radius: 10px;
-        background: #38bdf8;
-    }
+        .dot.active {
+            height: 28px;
+            border-radius: 10px;
+            background: #38bdf8;
+        }
 
     @@keyframes floatAnim {
-        0% { transform: translateY(-50%) translateY(0px); }
-        100% { transform: translateY(-50%) translateY(-10px); }
+        0% {
+            transform: translateY(-50%);
+        }
+
+        100% {
+            transform: translateY(calc(-50% - 10px));
+        }
     }
 
-    /* Moving Reviews Marquee Styles */
     .reviews-marquee-container {
         overflow: hidden;
         width: 100%;
-        position: relative;
         display: flex;
         mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
         -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
@@ -229,9 +247,9 @@
         animation: scrollMarquee 35s linear infinite;
     }
 
-    .reviews-track:hover {
-        animation-play-state: paused;
-    }
+        .reviews-track:hover {
+            animation-play-state: paused;
+        }
 
     .review-card-wrapper {
         width: 380px;
@@ -239,113 +257,97 @@
     }
 
     @@keyframes scrollMarquee {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(-50%); }
-    }
-    
-    .footer-link:hover {
-        color: #38bdf8 !important;
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(-50%);
+        }
     }
 </style>
-
 <div class="hero-wrapper" id="scroll-wrapper">
     <div id="canvas-container">
         <div id="loading-screen">LOADING SHOWROOM...</div>
-
-        <!-- Scroll Dots -->
         <div class="scroll-nav" id="scroll-nav">
-            <div class="dot active" data-index="0"></div>
-            <div class="dot" data-index="1"></div>
-            <div class="dot" data-index="2"></div>
+            <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
-
-        <!-- Card 1: Express Logistics Fleet -->
         <div class="card-overlay card-left" id="card-1">
-            <div class="card-header-flex">
-                <div class="card-badge">🚚</div>
-                <div class="card-tag">FLEET METRICS</div>
-            </div>
+            <div class="card-header-flex"><div class="card-badge">🚚</div><div class="card-tag">FLEET METRICS</div></div>
             <div class="card-title">Express Logistics Fleet</div>
             <div class="card-desc">High-capacity cargo vehicles engineered for optimal payload distribution and rapid regional delivery.</div>
             <div class="spec-grid">
-                <div class="spec-item">
-                    <div class="spec-label">Max Payload</div>
-                    <div class="spec-value highlight">1.8 Tons</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-label">Range</div>
-                    <div class="spec-value">850 km</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-label">Service Type</div>
-                    <div class="spec-value">Express 1:1</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-label">Dispatch Time</div>
-                    <div class="spec-value highlight">&lt; 30 Mins</div>
-                </div>
+                <div class="spec-item"><div class="spec-label">Max Payload</div><div class="spec-value highlight">1.8 Tons</div></div>
+                <div class="spec-item"><div class="spec-label">Range</div><div class="spec-value">850 km</div></div>
+                <div class="spec-item"><div class="spec-label">Service Type</div><div class="spec-value">Express 1:1</div></div>
+                <div class="spec-item"><div class="spec-label">Dispatch Time</div><div class="spec-value highlight">&lt; 30 Mins</div></div>
             </div>
         </div>
-
-        <!-- Card 2: Telematics Core -->
         <div class="card-overlay card-right" id="card-2">
-            <div class="card-header-flex">
-                <div class="card-badge">📡</div>
-                <div class="card-tag">TELEMATICS CORE</div>
-            </div>
+            <div class="card-header-flex"><div class="card-badge">📡</div><div class="card-tag">TELEMATICS CORE</div></div>
             <div class="card-title">Live Telematics System</div>
             <div class="card-desc">Real-time satellite tracking, automated dispatch updates, and smart driver route optimization delivered live.</div>
             <div class="spec-grid">
-                <div class="spec-item">
-                    <div class="spec-label">Ping Latency</div>
-                    <div class="spec-value highlight">&lt; 50 ms</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-label">GPS Precision</div>
-                    <div class="spec-value">0.5 Meters</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-label">System Uptime</div>
-                    <div class="spec-value">99.99%</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-label">AI Dispatch</div>
-                    <div class="spec-value highlight">Active</div>
-                </div>
+                <div class="spec-item"><div class="spec-label">Ping Latency</div><div class="spec-value highlight">&lt; 50 ms</div></div>
+                <div class="spec-item"><div class="spec-label">GPS Precision</div><div class="spec-value">0.5 Meters</div></div>
+                <div class="spec-item"><div class="spec-label">System Uptime</div><div class="spec-value">99.99%</div></div>
+                <div class="spec-item"><div class="spec-label">AI Dispatch</div><div class="spec-value highlight">Active</div></div>
             </div>
         </div>
-
-        <!-- Card 3: Secure Containment -->
         <div class="card-overlay card-left" id="card-3">
-            <div class="card-header-flex">
-                <div class="card-badge">🛡️</div>
-                <div class="card-tag">CARGO PROTECTION</div>
-            </div>
+            <div class="card-header-flex"><div class="card-badge">🛡️</div><div class="card-tag">CARGO PROTECTION</div></div>
             <div class="card-title">Secure Goods Vault</div>
             <div class="card-desc">Climate-stabilized interior compartments with dual biometric locks and real-time vault status tracking.</div>
             <div class="spec-grid">
-                <div class="spec-item">
-                    <div class="spec-label">Temp Control</div>
-                    <div class="spec-value highlight">-20°C to +15°C</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-label">Lock System</div>
-                    <div class="spec-value">RFID / Bio</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-label">Security Tier</div>
-                    <div class="spec-value">Grade AAA</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-label">Incident Rate</div>
-                    <div class="spec-value highlight">0.00%</div>
-                </div>
+                <div class="spec-item"><div class="spec-label">Temp Control</div><div class="spec-value highlight">-20°C to +15°C</div></div>
+                <div class="spec-item"><div class="spec-label">Lock System</div><div class="spec-value">RFID / Bio</div></div>
+                <div class="spec-item"><div class="spec-label">Security Tier</div><div class="spec-value">Grade AAA</div></div>
+                <div class="spec-item"><div class="spec-label">Incident Rate</div><div class="spec-value highlight">0.00%</div></div>
+            </div>
+        </div>
+        <div class="card-overlay card-center" id="cargo-card">
+            <div class="card-header-flex"><div class="card-badge">📦</div><div class="card-tag">STORAGE YARD</div></div>
+            <div class="card-title">Cargo staged for dispatch</div>
+            <div class="card-desc">Packed freight waits on the shelf until the driver collects it. One yard. One handover. No loose parcels.</div>
+            <div class="spec-grid">
+                <div class="spec-item"><div class="spec-label">Hold</div><div class="spec-value highlight">Bay 04</div></div>
+                <div class="spec-item"><div class="spec-label">Status</div><div class="spec-value">Ready</div></div>
+            </div>
+        </div>
+        <div class="card-overlay card-center" id="driver-card">
+            <div class="card-header-flex"><div class="card-badge">🧍</div><div class="card-tag">ON SITE</div></div>
+            <div class="card-title">Driver at the door</div>
+            <div class="card-desc">Parcel in hand. Collection PIN checked. The van returns once the handover is complete.</div>
+            <div class="spec-grid">
+                <div class="spec-item"><div class="spec-label">Check</div><div class="spec-value highlight">PIN verified</div></div>
+                <div class="spec-item"><div class="spec-label">Next</div><div class="spec-value">Van return</div></div>
+            </div>
+        </div>
+        <div class="card-overlay card-center" id="delivery-card">
+            <div class="card-header-flex"><div class="card-badge">✅</div><div class="card-tag">EN ROUTE</div></div>
+            <div class="card-title">Handover complete</div>
+            <div class="card-desc">Rear doors shut. The van leaves the stop and heads back to the depot.</div>
+            <div class="spec-grid">
+                <div class="spec-item"><div class="spec-label">Status</div><div class="spec-value highlight">Delivered</div></div>
+                <div class="spec-item"><div class="spec-label">Next stop</div><div class="spec-value">Depot</div></div>
+            </div>
+        </div>
+        <div class="card-overlay card-finale" id="outro-card">
+            <div class="card-header-flex"><div class="card-badge">🛣️</div><div class="card-tag">CLEAR</div></div>
+            <div class="card-title">Van clear of the stop</div>
+            <div class="card-desc">The run is closed. The depot is next.</div>
+        </div>
+        <div class="card-overlay card-left" id="warehouse-card">
+            <div class="card-header-flex"><div class="card-badge">🏭</div><div class="card-tag">DEPOT</div></div>
+            <div class="card-title">Back at the yard</div>
+            <div class="card-desc">Dock doors, parked trucks, and the next load already waiting.</div>
+            <div class="spec-grid">
+                <div class="spec-item"><div class="spec-label">Site</div><div class="spec-value highlight">Durban depot</div></div>
+                <div class="spec-item"><div class="spec-label">Queue</div><div class="spec-value">Ready</div></div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- ================= DYNAMIC MOVING CUSTOMER REVIEWS BANNER ================= -->
 <div class="container-fluid py-5" style="position: relative; z-index: 20; background-color: #0b1120;">
     <div class="row text-center mb-4">
         <div class="col">
@@ -353,23 +355,15 @@
             <p class="text-muted">Real feedback from businesses and individuals who trust our fleet.</p>
         </div>
     </div>
-
     @{
         var reviewsList = new List<dynamic>();
-
         if (Model != null && Model.Reviews != null && Model.Reviews.Any())
         {
             foreach (var r in Model.Reviews)
             {
-                reviewsList.Add(new {
-                    Rating = r.Rating,
-                    Comment = r.Comment,
-                    CustomerName = r.CustomerName,
-                    DatePosted = r.DatePosted.ToString("dd MMM yyyy")
-                });
+                reviewsList.Add(new { Rating = r.Rating, Comment = r.Comment, CustomerName = r.CustomerName, DatePosted = r.DatePosted.ToString("dd MMM yyyy") });
             }
         }
-
         var defaultReviews = new[] {
             new { Rating = 5, Comment = "The secure vault containment is top tier.", CustomerName = "Jessica Naidoo", DatePosted = "23 Aug 2026" },
             new { Rating = 5, Comment = "Incredible service! Our shipment arrived ahead of schedule.", CustomerName = "Sipho Mthethwa", DatePosted = "22 Aug 2026" },
@@ -378,21 +372,9 @@
             new { Rating = 4, Comment = "Exceptional live telemetry accuracy. We always know where our cargo is.", CustomerName = "Zinhle Khumalo", DatePosted = "15 Aug 2026" },
             new { Rating = 5, Comment = "Top-tier logistics partner. Seamless integration with our warehouse.", CustomerName = "Michael van der Merwe", DatePosted = "12 Aug 2026" }
         };
-
-        if (!reviewsList.Any())
-        {
-            foreach (var dr in defaultReviews) { reviewsList.Add(dr); }
-        }
-        else if (reviewsList.Count < 6)
-        {
-            foreach (var dr in defaultReviews)
-            {
-                if (!reviewsList.Any(x => x.CustomerName == dr.CustomerName)) { reviewsList.Add(dr); }
-            }
-        }
+        if (!reviewsList.Any()) { foreach (var dr in defaultReviews) { reviewsList.Add(dr); } }
+        else if (reviewsList.Count < 6) { foreach (var dr in defaultReviews) { if (!reviewsList.Any(x => x.CustomerName == dr.CustomerName)) { reviewsList.Add(dr); } } }
     }
-
-    <!-- Infinite Moving Marquee Track -->
     <div class="reviews-marquee-container mb-3">
         <div class="reviews-track">
             @for (int loop = 0; loop < 2; loop++)
@@ -407,13 +389,9 @@
                                         @for (int i = 1; i <= 5; i++)
                                         {
                                             if (i <= review.Rating)
-                                            {
-                                                <i class="fa-solid fa-star"></i>
-                                            }
+                                            {<i class="fa-solid fa-star"></i> }
                                             else
-                                            {
-                                                <i class="fa-regular fa-star"></i>
-                                            }
+                                            { <i class="fa-regular fa-star"></i>}
                                         }
                                     </div>
                                     <p class="card-text font-italic text-dark">"@review.Comment"</p>
@@ -430,203 +408,249 @@
         </div>
     </div>
 </div>
-
-<!-- Three.js Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-
 <script>
     const container = document.getElementById('canvas-container');
     const loadingScreen = document.getElementById('loading-screen');
     const scrollWrapper = document.getElementById('scroll-wrapper');
     const scrollNav = document.getElementById('scroll-nav');
-
-    // 1. Transparent Scene Setup (Using CSS Radial Gradient Behind Canvas)
+    const cargoCard = document.getElementById('cargo-card');
+    const driverCard = document.getElementById('driver-card');
+    const deliveryCard = document.getElementById('delivery-card');
+    const outroCard = document.getElementById('outro-card');
+    const warehouseCard = document.getElementById('warehouse-card');
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-
+    scene.background = new THREE.Color(0x0f172a);
+    const camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 2000);
     let currentCamPos = new THREE.Vector3(3.4, 1.1, 4.2);
     let targetCamPos = new THREE.Vector3(3.4, 1.1, 4.2);
     let currentLookAt = new THREE.Vector3(0.2, 0.5, 0.2);
     let targetLookAt = new THREE.Vector3(0.2, 0.5, 0.2);
-
     camera.position.copy(currentCamPos);
-    camera.lookAt(currentLookAt);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    renderer.setClearColor(0x0f172a, 1);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight, false);
     container.appendChild(renderer.domElement);
-
-    // 2. Realistic Ground Shadow
-    const shadowPlaneGeo = new THREE.PlaneGeometry(20, 20);
-    const shadowPlaneMat = new THREE.ShadowMaterial({ opacity: 0.45 });
-    const shadowPlane = new THREE.Mesh(shadowPlaneGeo, shadowPlaneMat);
-    shadowPlane.rotation.x = -Math.PI / 2;
-    shadowPlane.position.y = -0.01;
-    shadowPlane.receiveShadow = true;
-    scene.add(shadowPlane);
-
-    // 3. Automotive Studio Lighting Setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-    scene.add(ambientLight);
-
-    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
-    keyLight.position.set(6, 9, 6);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.width = 2048;
-    keyLight.shadow.mapSize.height = 2048;
-    keyLight.shadow.radius = 3;
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.05);
+    keyLight.position.set(7, 9, 5);
     scene.add(keyLight);
-
-    const sideFillLight = new THREE.DirectionalLight(0xfef3c7, 0.7);
-    sideFillLight.position.set(-6, 4, 3);
-    scene.add(sideFillLight);
-
-    const topRimLight = new THREE.DirectionalLight(0x93c5fd, 0.8);
-    topRimLight.position.set(0, 8, -6);
-    scene.add(topRimLight);
-
-    // 4. Camera Waypoints per Section
     const cameraWaypoints = [
-        {
-            camPos: { x: 3.4, y: 1.1, z: 4.2 },
-            lookAt: { x: 0.2, y: 0.5, z: 0.2 },
-            vanRotY: 0.4
-        },
-        {
-            camPos: { x: -1.8, y: 1.5, z: 2.2 },
-            lookAt: { x: -0.3, y: 0.8, z: 0.2 },
-            vanRotY: 1.8
-        },
-        {
-            camPos: { x: -3.2, y: 0.9, z: -3.6 },
-            lookAt: { x: -0.2, y: 0.6, z: -0.2 },
-            vanRotY: 4.1
-        }
+        { camPos: { x: 3.4, y: 1.1, z: 4.2 }, lookAt: { x: 0.2, y: 0.5, z: 0.2 }, vanRotY: 0.4 },
+        { camPos: { x: -1.8, y: 1.5, z: 2.2 }, lookAt: { x: -0.3, y: 0.8, z: 0.2 }, vanRotY: 1.8 },
+        { camPos: { x: -3.2, y: 0.9, z: -3.6 }, lookAt: { x: -0.2, y: 0.6, z: -0.2 }, vanRotY: 4.1 }
     ];
-
-    // Load Model
     const loader = new THREE.GLTFLoader();
-    let vanModel = null;
-    let targetVanRotY = cameraWaypoints[0].vanRotY;
-
-    loader.load(
-        '@Url.Content("~/Content/models/van.glb")',
-        function (gltf) {
-            vanModel = gltf.scene;
-            vanModel.scale.set(1, 1, 1);
-            vanModel.position.set(0, 0, 0);
-            vanModel.rotation.y = targetVanRotY;
-
-            vanModel.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                }
+    let vanModel = null, boxesModel = null, driverModel = null, warehouseModel = null;
+    let targetVanRotY = 0.4, targetVanX = 0, targetVanZ = 0, targetBoxesRotY = 0, targetDriverRotY = 0;
+    let targetWarehouseX = -18, targetWarehouseRotY = 0;
+    let boxesVisible = false, driverVisible = false, warehouseVisible = false, vanVisible = true;
+    function fitAndGround(model, targetHeight) {
+        const box = new THREE.Box3().setFromObject(model);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        model.scale.setScalar(targetHeight / Math.max(size.y, 0.001));
+        const fitted = new THREE.Box3().setFromObject(model);
+        const center = new THREE.Vector3();
+        fitted.getCenter(center);
+        model.position.x -= center.x;
+        model.position.z -= center.z;
+        model.position.y -= fitted.min.y;
+    }
+    function fitOverview(model, targetSize) {
+        const box = new THREE.Box3().setFromObject(model);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+        model.scale.setScalar(targetSize / maxDim);
+        const fitted = new THREE.Box3().setFromObject(model);
+        const center = new THREE.Vector3();
+        fitted.getCenter(center);
+        model.position.x -= center.x;
+        model.position.z -= center.z;
+        model.position.y -= fitted.min.y;
+    }
+    function paint(model) {
+        const maxAniso = renderer.capabilities.getMaxAnisotropy();
+        model.traverse(c => {
+            if (!c.isMesh || !c.material) return;
+            const mats = Array.isArray(c.material) ? c.material : [c.material];
+            mats.forEach(m => {
+                if (m.map) { m.map.anisotropy = maxAniso; m.map.needsUpdate = true; }
+                m.needsUpdate = true;
             });
-
-            scene.add(vanModel);
-            loadingScreen.style.display = 'none';
-        },
-        undefined,
-        function (error) {
-            console.error('Error loading 3D model:', error);
-            loadingScreen.innerText = 'Error loading model.';
-        }
-    );
-
-    // 5. Scroll Interaction & Card Popups
-    const cards = [
-        document.getElementById('card-1'),
-        document.getElementById('card-2'),
-        document.getElementById('card-3')
-    ];
+        });
+    }
+    loader.load('@Url.Content("~/Content/models/van.glb")', function (gltf) {
+        vanModel = gltf.scene;
+        paint(vanModel);
+        scene.add(vanModel);
+        const box = new THREE.Box3().setFromObject(vanModel);
+        vanModel.position.y -= box.min.y;
+        loadingScreen.style.display = 'none';
+    }, undefined, function () { loadingScreen.innerText = 'Error loading van.'; });
+    loader.load('@Url.Content("~/Content/models/boxes.glb")', function (gltf) {
+        boxesModel = gltf.scene; fitAndGround(boxesModel, 1.7); boxesModel.visible = false; paint(boxesModel); scene.add(boxesModel);
+    });
+    loader.load('@Url.Content("~/Content/models/driver.glb")', function (gltf) {
+        driverModel = gltf.scene; fitAndGround(driverModel, 1.65); driverModel.visible = false; paint(driverModel); scene.add(driverModel);
+    });
+    loader.load('@Url.Content("~/Content/models/warehouse.glb")', function (gltf) {
+        warehouseModel = gltf.scene;
+        fitOverview(warehouseModel, 16);
+        warehouseModel.position.x = -18;
+        warehouseModel.visible = false;
+        paint(warehouseModel);
+        scene.add(warehouseModel);
+    }, function (xhr) {
+        if (xhr.total) loadingScreen.innerText = 'LOADING DEPOT... ' + Math.round((xhr.loaded / xhr.total) * 100) + '%';
+    }, function (error) { console.error('Error loading warehouse:', error); });
+    const cards = [document.getElementById('card-1'), document.getElementById('card-2'), document.getElementById('card-3')];
     const dots = document.querySelectorAll('.dot');
-
+    function setCamera(pos, look) { targetCamPos.set(pos.x, pos.y, pos.z); targetLookAt.set(look.x, look.y, look.z); }
     window.addEventListener('scroll', () => {
         const maxScroll = scrollWrapper.offsetHeight - window.innerHeight;
-        const scrollFraction = Math.min(Math.max(window.scrollY / maxScroll, 0), 1);
-
-        let p0, p1, factor;
-        if (scrollFraction <= 0.5) {
-            p0 = cameraWaypoints[0];
-            p1 = cameraWaypoints[1];
-            factor = scrollFraction / 0.5;
+        const t = Math.min(Math.max(window.scrollY / maxScroll, 0), 1);
+        const past = window.scrollY >= maxScroll - 50;
+        let activeDot = 0;
+        boxesVisible = false; driverVisible = false; warehouseVisible = false; vanVisible = true;
+        cargoCard.classList.remove('active');
+        driverCard.classList.remove('active');
+        deliveryCard.classList.remove('active');
+        outroCard.classList.remove('active');
+        warehouseCard.classList.remove('active');
+        targetVanZ = 0;
+        if (t < 0.18) {
+            const local = t / 0.18;
+            const p0 = local <= 0.5 ? cameraWaypoints[0] : cameraWaypoints[1];
+            const p1 = local <= 0.5 ? cameraWaypoints[1] : cameraWaypoints[2];
+            const f = local <= 0.5 ? local / 0.5 : (local - 0.5) / 0.5;
+            setCamera(
+                { x: THREE.MathUtils.lerp(p0.camPos.x, p1.camPos.x, f), y: THREE.MathUtils.lerp(p0.camPos.y, p1.camPos.y, f), z: THREE.MathUtils.lerp(p0.camPos.z, p1.camPos.z, f) },
+                { x: THREE.MathUtils.lerp(p0.lookAt.x, p1.lookAt.x, f), y: THREE.MathUtils.lerp(p0.lookAt.y, p1.lookAt.y, f), z: THREE.MathUtils.lerp(p0.lookAt.z, p1.lookAt.z, f) }
+            );
+            targetVanRotY = THREE.MathUtils.lerp(p0.vanRotY, p1.vanRotY, f);
+            targetVanX = 0;
+            activeDot = local < 0.33 ? 0 : (local < 0.66 ? 1 : 2);
+            cards.forEach((card, i) => card.classList.toggle('active', i === activeDot && !past));
+        } else if (t < 0.24) {
+            setCamera({ x: -2.2, y: 1.2, z: 4.4 }, { x: 1.5, y: 0.6, z: 0 });
+            targetVanRotY = 1.55;
+            targetVanX = THREE.MathUtils.lerp(0, 9, (t - 0.18) / 0.06);
+            activeDot = 2;
+            cards.forEach(c => c.classList.remove('active'));
+        } else if (t < 0.34) {
+            const sway = THREE.MathUtils.lerp(-1, 1, (t - 0.24) / 0.10);
+            setCamera({ x: sway * 2.6, y: 1.2, z: 3.4 }, { x: sway * 0.55, y: 0.7, z: 0 });
+            targetVanX = 9; targetBoxesRotY = sway * 0.7; boxesVisible = true; activeDot = 3;
+            cards.forEach(c => c.classList.remove('active'));
+            cargoCard.classList.toggle('active', !past);
+        } else if (t < 0.44) {
+            const angle = ((t - 0.34) / 0.10) * Math.PI * 2;
+            setCamera({ x: Math.sin(angle) * 2.5, y: 1.15, z: Math.cos(angle) * 2.5 }, { x: 0, y: 0.85, z: 0 });
+            targetVanX = 9; targetDriverRotY = angle * 0.18; driverVisible = true; activeDot = 4;
+            cards.forEach(c => c.classList.remove('active'));
+            driverCard.classList.toggle('active', !past);
+        } else if (t < 0.52) {
+            const back = (t - 0.44) / 0.08;
+            setCamera({ x: THREE.MathUtils.lerp(2.4, 0, back), y: 1.2, z: 5.2 }, { x: 0, y: 0.6, z: 0 });
+            targetVanRotY = THREE.MathUtils.lerp(0.35, Math.PI, back);
+            targetVanX = THREE.MathUtils.lerp(9, 0, back);
+            activeDot = 4;
+            cards.forEach(c => c.classList.remove('active'));
+        } else if (t < 0.58) {
+            const lift = (t - 0.52) / 0.06;
+            setCamera(
+                { x: 0, y: THREE.MathUtils.lerp(1.4, 5.2, lift), z: THREE.MathUtils.lerp(5.2, 1.4, lift) },
+                { x: 0, y: 0.5, z: -0.4 }
+            );
+            targetVanRotY = Math.PI;
+            targetVanX = 0;
+            activeDot = 4;
+            cards.forEach(c => c.classList.remove('active'));
+            deliveryCard.classList.toggle('active', !past);
+        } else if (t < 0.64) {
+            const away = (t - 0.58) / 0.06;
+            targetVanX = THREE.MathUtils.lerp(0, 22, away);
+            targetVanRotY = Math.PI;
+            setCamera({ x: 0, y: 5.2, z: 1.6 }, { x: 0, y: 0.45, z: -0.2 });
+            activeDot = 4;
+            cards.forEach(c => c.classList.remove('active'));
+            outroCard.classList.toggle('active', away > 0.55 && !past);
         } else {
-            p0 = cameraWaypoints[1];
-            p1 = cameraWaypoints[2];
-            factor = (scrollFraction - 0.5) / 0.5;
+            const enter = (t - 0.64) / 0.36;
+            vanVisible = false;
+            targetVanX = 22;
+            warehouseVisible = true;
+            targetWarehouseX = THREE.MathUtils.lerp(-18, 1.2, Math.min(enter / 0.08, 1));
+            targetWarehouseRotY = 0;
+            const shots = [
+                { x: 1.2, y: 4.45, z: 13.4, lx: 1.2, ly: 1.4, lz: 0 },
+                { x: 1.2, y: 1.98, z: 9.4, lx: 1.2, ly: 1.3, lz: 0 },
+                { x: 7.5, y: 1.88, z: 6.3, lx: 1.2, ly: 1.2, lz: 0 },
+                { x: 10.4, y: 2.1, z: 1.2, lx: 1.2, ly: 1.2, lz: 0 },
+                { x: 7.3, y: 1.96, z: -6.4, lx: 1.2, ly: 1.15, lz: 0 },
+                { x: 1.2, y: 2.28, z: -10.3, lx: 1.2, ly: 1.2, lz: 0 },
+                { x: -6.3, y: 1.87, z: -6.6, lx: 1.2, ly: 1.15, lz: 0 },
+                { x: -9.2, y: 2.1, z: 1.2, lx: 1.2, ly: 1.2, lz: 0 },
+                { x: 1.2, y: 8.15, z: 6.5, lx: 1.2, ly: 0.4, lz: 0 },
+                { x: 1.2, y: 1.65, z: 4.85, lx: 1.2, ly: 1.2, lz: 0 },
+                { x: 1.2, y: 1.38, z: 1.25, lx: 1.2, ly: 1.2, lz: -1.5 },
+                { x: 0.05, y: 1.38, z: -0.7, lx: 2.5, ly: 1.2, lz: -0.7 },
+                { x: 2.7, y: 1.48, z: -0.15, lx: 1.2, ly: 1.2, lz: 1.7 },
+                { x: 1.2, y: 3.2, z: 11.1, lx: 1.2, ly: 1.3, lz: 0 }
+            ];
+            const scaled = Math.min(Math.max((enter - 0.06) / 0.94, 0), 0.999);
+            const i = Math.floor(scaled * (shots.length - 1));
+            const f = scaled * (shots.length - 1) - i;
+            const a = shots[i];
+            const b = shots[Math.min(i + 1, shots.length - 1)];
+            setCamera(
+                { x: THREE.MathUtils.lerp(a.x, b.x, f), y: THREE.MathUtils.lerp(a.y, b.y, f), z: THREE.MathUtils.lerp(a.z, b.z, f) },
+                { x: THREE.MathUtils.lerp(a.lx, b.lx, f), y: THREE.MathUtils.lerp(a.ly, b.ly, f), z: THREE.MathUtils.lerp(a.lz, b.lz, f) }
+            );
+            activeDot = 5;
+            cards.forEach(c => c.classList.remove('active'));
+            warehouseCard.classList.toggle('active', enter > 0.08 && enter < 0.92 && !past);
         }
-
-        targetCamPos.x = THREE.MathUtils.lerp(p0.camPos.x, p1.camPos.x, factor);
-        targetCamPos.y = THREE.MathUtils.lerp(p0.camPos.y, p1.camPos.y, factor);
-        targetCamPos.z = THREE.MathUtils.lerp(p0.camPos.z, p1.camPos.z, factor);
-
-        targetLookAt.x = THREE.MathUtils.lerp(p0.lookAt.x, p1.lookAt.x, factor);
-        targetLookAt.y = THREE.MathUtils.lerp(p0.lookAt.y, p1.lookAt.y, factor);
-        targetLookAt.z = THREE.MathUtils.lerp(p0.lookAt.z, p1.lookAt.z, factor);
-
-        targetVanRotY = THREE.MathUtils.lerp(p0.vanRotY, p1.vanRotY, factor);
-
-        const activeIndex = scrollFraction < 0.33 ? 0 : (scrollFraction < 0.66 ? 1 : 2);
-        const isPastHero = window.scrollY >= maxScroll - 50;
-
-        cards.forEach((card, idx) => {
-            if (idx === activeIndex && !isPastHero) {
-                card.classList.add('active');
-            } else {
-                card.classList.remove('active');
-            }
-        });
-
-        dots.forEach((dot, idx) => {
-            dot.classList.toggle('active', idx === activeIndex);
-        });
-
-        if (scrollNav) {
-            scrollNav.style.opacity = isPastHero ? '0' : '1';
-            scrollNav.style.pointerEvents = isPastHero ? 'none' : 'auto';
-        }
+        dots.forEach((dot, i) => dot.classList.toggle('active', i === activeDot));
+        if (scrollNav) { scrollNav.style.opacity = past ? '0' : '1'; }
     });
-
-    // 3D Tilt Effect on Mouse Move
     cards.forEach(card => {
         card.addEventListener('mousemove', (e) => {
             const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left - rect.width / 2;
-            const y = e.clientY - rect.top - rect.height / 2;
-            card.style.transform = `translateY(-50%) rotateY(${x * 0.04}deg) rotateX(${-y * 0.04}deg) scale(1.02)`;
+            card.style.transform = `translateY(-50%) rotateY(${(e.clientX - rect.left - rect.width / 2) * 0.04}deg) rotateX(${-(e.clientY - rect.top - rect.height / 2) * 0.04}deg) scale(1.02)`;
         });
-
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = '';
-        });
+        card.addEventListener('mouseleave', () => { card.style.transform = ''; });
     });
-
-    // 6. Smooth Render Loop
     function animate() {
         requestAnimationFrame(animate);
-
         currentCamPos.lerp(targetCamPos, 0.06);
         currentLookAt.lerp(targetLookAt, 0.06);
-
         camera.position.copy(currentCamPos);
         camera.lookAt(currentLookAt);
-
         if (vanModel) {
+            vanModel.visible = vanVisible;
             vanModel.rotation.y += (targetVanRotY - vanModel.rotation.y) * 0.06;
+            vanModel.position.x += (targetVanX - vanModel.position.x) * 0.06;
+            vanModel.position.z += (targetVanZ - vanModel.position.z) * 0.06;
         }
-
+        if (boxesModel) { boxesModel.visible = boxesVisible; boxesModel.rotation.y += (targetBoxesRotY - boxesModel.rotation.y) * 0.06; }
+        if (driverModel) { driverModel.visible = driverVisible; driverModel.rotation.y += (targetDriverRotY - driverModel.rotation.y) * 0.06; }
+        if (warehouseModel) {
+            warehouseModel.visible = warehouseVisible;
+            warehouseModel.position.x += (targetWarehouseX - warehouseModel.position.x) * 0.05;
+            warehouseModel.rotation.y += (targetWarehouseRotY - warehouseModel.rotation.y) * 0.05;
+        }
         renderer.render(scene, camera);
     }
     animate();
-
     window.addEventListener('resize', () => {
         camera.aspect = container.clientWidth / container.clientHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setSize(container.clientWidth, container.clientHeight, false);
     });
 </script>
