@@ -175,6 +175,7 @@
     <Compile Include="Models\Load.cs">
       <DependentUpon>KeystoneLogisticsDB.tt</DependentUpon>
     </Compile>
+    <Compile Include="Models\LoadMoney.cs" />
     <Compile Include="Models\PODDocument.cs">
       <DependentUpon>KeystoneLogisticsDB.tt</DependentUpon>
     </Compile>

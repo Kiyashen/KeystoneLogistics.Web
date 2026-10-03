@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
 using System.Net.Mail;
@@ -11,18 +12,15 @@ namespace KeystoneLogistics.Controllers
     public class PaymentController : Controller
     {
         private KeystoneLogisticsDBEntities db = new KeystoneLogisticsDBEntities();
-
         private const decimal BASE_FEE = 500.00m;
         private const decimal RATE_PER_KM = 12.00m;
         private const decimal RATE_PER_KG = 1.50m;
         private const decimal MINIMUM_AMOUNT = 750.00m;
         private const decimal DEFAULT_WEIGHT_KG = 800m;
         private const decimal ROAD_FACTOR = 1.35m;
-
         private const decimal DRIVER_BASE = 400.00m;
         private const decimal DRIVER_RATE_PER_KM = 8.00m;
         private const decimal DRIVER_MINIMUM = 500.00m;
-
         private const string AreaError = "We only accommodate deliveries between Durban and Pietermaritzburg and the surrounding areas.";
 
         private void SendEmail(string toEmail, string subject, string body)
@@ -104,7 +102,6 @@ namespace KeystoneLogistics.Controllers
             lat = 0;
             lng = 0;
             if (string.IsNullOrWhiteSpace(text)) return false;
-
             var coord = Regex.Match(text, @"(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)");
             if (coord.Success &&
                 double.TryParse(coord.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out lat) &&
@@ -112,17 +109,17 @@ namespace KeystoneLogistics.Controllers
             {
                 return true;
             }
-
-            string cleaned = Regex.Replace(text, @"\b(hub|terminal|depot|warehouse|centre|center|yard|port)\b", " ", RegexOptions.IgnoreCase);
+            string cleaned = Regex.Replace(text, @"\b(hub|terminal|depot|warehouse|centre|center|yard|port|distribution)\b", " ", RegexOptions.IgnoreCase);
             cleaned = Regex.Replace(cleaned, @"\s+", " ").Trim();
-
-            string[] queries = new[]
+            var queries = new List<string> { text + ", South Africa", text };
+            if (!string.IsNullOrWhiteSpace(cleaned)) queries.Add(cleaned + ", South Africa");
+            string lower = text.ToLowerInvariant();
+            string[] towns = { "pietermaritzburg", "pmb", "durban", "pinetown", "umhlanga", "chatsworth", "westville", "hillcrest", "ballito", "howick", "amanzimtoti", "phoenix", "verulam" };
+            foreach (string town in towns)
             {
-                text + ", South Africa",
-                string.IsNullOrWhiteSpace(cleaned) ? null : cleaned + ", South Africa",
-                text
-            };
-
+                if (lower.Contains(town))
+                    queries.Add((town == "pmb" ? "Pietermaritzburg" : town) + ", South Africa");
+            }
             foreach (string query in queries)
             {
                 if (string.IsNullOrWhiteSpace(query)) continue;
@@ -143,11 +140,8 @@ namespace KeystoneLogistics.Controllers
                         return true;
                     }
                 }
-                catch
-                {
-                }
+                catch { }
             }
-
             return false;
         }
 
@@ -231,7 +225,6 @@ namespace KeystoneLogistics.Controllers
                 if (driver != null && !string.IsNullOrWhiteSpace(driver.FullName))
                     driverName = driver.FullName;
             }
-
             string subject = $"Driver Payout Received - {load.TrackingNumber}";
             string body = $@"
             <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;'>

@@ -160,6 +160,8 @@
                             {
                                 foreach (var item in loadList)
                                 {
+                                    DateTime? due = item.DeliveredDate.HasValue ? item.DeliveredDate.Value.AddDays(3) : (DateTime?)null;
+                                    bool overdue = item.Status == "Delivered" && due.HasValue && due.Value < DateTime.Now;
                                     <tr>
                                         <td><strong>@item.TrackingNumber</strong></td>
                                         <td>
@@ -171,7 +173,13 @@
                                             </button>
                                         </td>
                                         <td>@item.CargoDescription</td>
-                                        <td><span class="badge badge-secondary">@item.Status</span></td>
+                                        <td>
+                                            <span class="badge badge-secondary">@item.Status</span>
+                                            @if (overdue)
+                                            {
+                                                <div class="badge badge-danger mt-1">PAYMENT OVERDUE</div>
+                                            }
+                                        </td>
                                         <td>
                                             @if (item.Driver != null)
                                             {
@@ -234,6 +242,14 @@
                                             }
                                             else if (userRole == "Customer" && item.Status == "Delivered")
                                             {
+                                                if (overdue)
+                                                {
+                                                    <div class="small font-weight-bold text-danger mb-1">FINAL DEMAND. Pay now or this account goes to collections.</div>
+                                                }
+                                                else if (due.HasValue)
+                                                {
+                                                    <div class="small font-weight-bold mb-1">Pay by @due.Value.ToString("dd MMM yyyy")</div>
+                                                }
                                                 <a href="@Url.Action("Checkout", "Payment", new { id = item.LoadId })" class="btn btn-sm btn-success mb-1">Pay Now</a>
                                                 <button type="button" class="btn btn-sm btn-outline-secondary"
                                                         onclick="printPODReceipt('@item.TrackingNumber', '@item.PickupLocation', '@item.DropoffLocation', '@item.CargoDescription', 'Vehicle #@item.AssignedVehicleId', '@(item.CollectionPasscode ?? "N/A")')">
@@ -242,6 +258,10 @@
                                             }
                                             else if (item.Status == "Delivered")
                                             {
+                                                if (overdue)
+                                                {
+                                                    <div class="small font-weight-bold text-danger mb-1">Customer payment overdue</div>
+                                                }
                                                 <button type="button" class="btn btn-sm btn-outline-secondary"
                                                         onclick="printPODReceipt('@item.TrackingNumber', '@item.PickupLocation', '@item.DropoffLocation', '@item.CargoDescription', 'Vehicle #@item.AssignedVehicleId', '@(item.CollectionPasscode ?? "N/A")')">
                                                     POD Receipt
@@ -280,27 +300,41 @@
         decimal completionRate = decidedJobs == 0 ? 0 : Math.Round((decimal)completedJobs / decidedJobs * 100, 1);
         decimal rejectRate = decidedJobs == 0 ? 0 : Math.Round((decimal)rejectedJobs / decidedJobs * 100, 1);
         int unassignedJobs = all.Count(l => l.DriverId == null && l.Status != "Cancelled");
+        int overdueJobs = all.Count(l => l.Status == "Delivered" && l.DeliveredDate.HasValue && l.DeliveredDate.Value.AddDays(3) < DateTime.Now);
+        decimal earned = all.Where(l => l.Status == "Paid / Processing" || l.Status == "Completed").Sum(l => l.QuotedAmount);
+        decimal customersOwe = all.Where(l => l.Status == "Delivered").Sum(l => l.QuotedAmount);
+        decimal owedToDrivers = all.Where(l => l.Status == "Paid / Processing").Sum(l => l.DriverCut);
+        decimal paidToDrivers = all.Where(l => l.Status == "Completed").Sum(l => l.DriverCut);
+        decimal net = earned - paidToDrivers - owedToDrivers;
         var driverRows = all.Where(l => l.Driver != null)
             .GroupBy(l => l.Driver.FullName)
-            .Select(g => new
-            {
-                Name = g.Key,
-                Jobs = g.Count(),
-                Done = g.Count(x => x.Status == "Completed" || x.Status == "Delivered" || x.Status == "Paid / Processing")
-            })
+             .Select(g => new
+             {
+                 Name = g.Key,
+                 Jobs = g.Count(),
+                 Done = g.Count(x => x.Status == "Completed" || x.Status == "Delivered" || x.Status == "Paid / Processing"),
+                 Owed = g.Where(x => x.Status == "Paid / Processing").Sum(x => x.DriverCut),
+                 Paid = g.Where(x => x.Status == "Completed").Sum(x => x.DriverCut)
+             })
             .OrderByDescending(x => x.Jobs)
             .Take(5)
             .ToList();
         var customerRows = all.Where(l => l.Customer != null)
             .GroupBy(l => string.IsNullOrWhiteSpace(l.Customer.CompanyName) ? l.Customer.ContactPerson : l.Customer.CompanyName)
-            .Select(g => new { Name = g.Key, Jobs = g.Count() })
+            .Select(g => new
+            {
+                Name = g.Key,
+                Jobs = g.Count(),
+                Owes = g.Where(x => x.Status == "Delivered").Sum(x => x.QuotedAmount),
+                Paid = g.Where(x => x.Status == "Paid / Processing" || x.Status == "Completed").Sum(x => x.QuotedAmount)
+            })
             .OrderByDescending(x => x.Jobs)
             .Take(5)
             .ToList();
         <div class="card shadow mb-5" style="border-radius: 16px; overflow: hidden;">
             <div class="card-header py-3" style="background: #3A3226; color: #F4EFE6;">
                 <h5 class="mb-0 font-weight-bold"><i class="fa-solid fa-chart-column mr-2"></i>Dispatch Analytics</h5>
-                <small>Live figures from the shipment records above. Nothing here is sample data.</small>
+                <small>Live figures from the shipment records above. Money uses the same fee rules as checkout.</small>
             </div>
             <div class="card-body">
                 <div class="row text-center mb-4">
@@ -309,7 +343,13 @@
                     <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#3D6F8F;border-radius:12px;"><div class="h3 mb-0">@queuedJobs</div><small>Queued behind a job</small></div></div>
                     <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#B45309;border-radius:12px;"><div class="h3 mb-0">@deliveredJobs</div><small>Awaiting payment</small></div></div>
                     <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#166534;border-radius:12px;"><div class="h3 mb-0">@completionRate%</div><small>Completion rate</small></div></div>
-                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#9B2C2C;border-radius:12px;"><div class="h3 mb-0">@rejectRate%</div><small>Rejection rate</small></div></div>
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#9B2C2C;border-radius:12px;"><div class="h3 mb-0">@overdueJobs</div><small>Payment overdue</small></div></div>
+                </div>
+                <div class="row text-center mb-4">
+                    <div class="col-md-3 mb-3"><div class="p-3 text-white" style="background:#166534;border-radius:12px;"><div class="h4 mb-0">R @earned.ToString("N0")</div><small>Money received</small></div></div>
+                    <div class="col-md-3 mb-3"><div class="p-3 text-white" style="background:#9B2C2C;border-radius:12px;"><div class="h4 mb-0">R @customersOwe.ToString("N0")</div><small>Customers still owe</small></div></div>
+                    <div class="col-md-3 mb-3"><div class="p-3 text-white" style="background:#B45309;border-radius:12px;"><div class="h4 mb-0">R @owedToDrivers.ToString("N0")</div><small>Still to pay drivers</small></div></div>
+                    <div class="col-md-3 mb-3"><div class="p-3 text-white" style="background:#3D6F8F;border-radius:12px;"><div class="h4 mb-0">R @net.ToString("N0")</div><small>Left after driver pay</small></div></div>
                 </div>
                 <div class="row">
                     <div class="col-lg-7 mb-4">
@@ -317,43 +357,44 @@
                         <canvas id="statusChart" height="130"></canvas>
                     </div>
                     <div class="col-lg-5 mb-4">
-                        <h6 class="font-weight-bold">Decided jobs</h6>
-                        <canvas id="outcomeChart" height="130"></canvas>
+                        <h6 class="font-weight-bold">Money</h6>
+                        <canvas id="moneyChart" height="130"></canvas>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <h6 class="font-weight-bold">Driver workload</h6>
+                        <h6 class="font-weight-bold">Driver money</h6>
                         <table class="table table-sm table-bordered">
-                            <thead style="background:#EBE3D4;"><tr><th>Driver</th><th>Assigned jobs</th><th>Delivered or paid</th></tr></thead>
+                            <thead style="background:#EBE3D4;"><tr><th>Driver</th><th>Jobs</th><th>Still to pay</th><th>Already paid</th></tr></thead>
                             <tbody>
                                 @foreach (var row in driverRows)
                                 {
-                                    <tr><td>@row.Name</td><td>@row.Jobs</td><td>@row.Done</td></tr>
+                                    <tr><td>@row.Name</td><td>@row.Jobs</td><td>R @row.Owed.ToString("N0")</td><td>R @row.Paid.ToString("N0")</td></tr>
                                 }
                                 @if (!driverRows.Any())
                                 {
-                                    <tr><td colspan="3" class="text-muted">No drivers assigned yet.</td></tr>
+                                    <tr><td colspan="4" class="text-muted">No drivers assigned yet.</td></tr>
                                 }
                             </tbody>
                         </table>
+                        <p class="small text-muted mb-0">Already paid out to drivers: R @paidToDrivers.ToString("N0")</p>
                     </div>
                     <div class="col-md-6">
-                        <h6 class="font-weight-bold">Customer demand</h6>
+                        <h6 class="font-weight-bold">Customer money</h6>
                         <table class="table table-sm table-bordered">
-                            <thead style="background:#EBE3D4;"><tr><th>Customer</th><th>Bookings</th></tr></thead>
+                            <thead style="background:#EBE3D4;"><tr><th>Customer</th><th>Bookings</th><th>Still owes</th><th>Already paid</th></tr></thead>
                             <tbody>
                                 @foreach (var row in customerRows)
                                 {
-                                    <tr><td>@row.Name</td><td>@row.Jobs</td></tr>
+                                    <tr><td>@row.Name</td><td>@row.Jobs</td><td>R @row.Owes.ToString("N0")</td><td>R @row.Paid.ToString("N0")</td></tr>
                                 }
                                 @if (!customerRows.Any())
                                 {
-                                    <tr><td colspan="2" class="text-muted">No customer bookings yet.</td></tr>
+                                    <tr><td colspan="4" class="text-muted">No customer bookings yet.</td></tr>
                                 }
                             </tbody>
                         </table>
-                        <p class="small text-muted mb-0">Unassigned open jobs: @unassignedJobs. Paid and waiting for driver payout: @paidJobs. Closed jobs: @completedJobs of @totalJobs.</p>
+                        <p class="small text-muted mb-0">Unassigned open jobs: @unassignedJobs. Waiting on driver payout: @paidJobs. Closed jobs: @completedJobs of @totalJobs. Rejection rate: @rejectRate%.</p>
                     </div>
                 </div>
             </div>
@@ -372,11 +413,11 @@
                 },
                 options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
             });
-            new Chart(document.getElementById('outcomeChart'), {
+            new Chart(document.getElementById('moneyChart'), {
                 type: 'doughnut',
                 data: {
-                    labels: ['Completed', 'Rejected'],
-                    datasets: [{ data: [@completedJobs, @rejectedJobs], backgroundColor: ['#2F6F5E', '#9B2C2C'] }]
+                    labels: ['Received', 'Customers owe', 'Still to pay drivers', 'Paid to drivers'],
+                    datasets: [{ data: [@earned.ToString(System.Globalization.CultureInfo.InvariantCulture), @customersOwe.ToString(System.Globalization.CultureInfo.InvariantCulture), @owedToDrivers.ToString(System.Globalization.CultureInfo.InvariantCulture), @paidToDrivers.ToString(System.Globalization.CultureInfo.InvariantCulture)], backgroundColor: ['#166534', '#9B2C2C', '#B45309', '#3D6F8F'] }]
                 }
             });
         </script>

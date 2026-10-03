@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data.Entity;
 using System.Data.Entity.Validation;
@@ -114,14 +115,17 @@ namespace KeystoneLogistics.Controllers
             {
                 return true;
             }
-            string cleaned = Regex.Replace(text, @"\b(hub|terminal|depot|warehouse|centre|center|yard|port)\b", " ", RegexOptions.IgnoreCase);
+            string cleaned = Regex.Replace(text, @"\b(hub|terminal|depot|warehouse|centre|center|yard|port|distribution)\b", " ", RegexOptions.IgnoreCase);
             cleaned = Regex.Replace(cleaned, @"\s+", " ").Trim();
-            string[] queries = new[]
+            var queries = new List<string> { text + ", South Africa", text };
+            if (!string.IsNullOrWhiteSpace(cleaned)) queries.Add(cleaned + ", South Africa");
+            string lower = text.ToLowerInvariant();
+            string[] towns = { "pietermaritzburg", "pmb", "durban", "pinetown", "umhlanga", "chatsworth", "westville", "hillcrest", "ballito", "howick", "amanzimtoti", "phoenix", "verulam" };
+            foreach (string town in towns)
             {
-                text + ", South Africa",
-                string.IsNullOrWhiteSpace(cleaned) ? null : cleaned + ", South Africa",
-                text
-            };
+                if (lower.Contains(town))
+                    queries.Add((town == "pmb" ? "Pietermaritzburg" : town) + ", South Africa");
+            }
             foreach (string query in queries)
             {
                 if (string.IsNullOrWhiteSpace(query)) continue;
@@ -198,6 +202,34 @@ namespace KeystoneLogistics.Controllers
             if (Session["UserRole"] == null) return RedirectToAction("Login", "Account");
             string userRole = Session["UserRole"]?.ToString();
             int userId = Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int id) ? id : 0;
+
+            var testLoad = db.Loads.Include(l => l.Customer)
+                .Where(l => l.Status == "Delivered" && l.DeliveredDate.HasValue)
+                .OrderByDescending(l => l.DeliveredDate)
+                .FirstOrDefault();
+            if (testLoad != null && !db.AuditLogs.Any(a => a.LoadId == testLoad.LoadId && a.Action.Contains("OVERDUE notice")))
+            {
+                string body = "<h2 style='color:#9B2C2C;'>PAYMENT OVERDUE. FINAL DEMAND.</h2>"
+                    + "<p>Tracking: <strong>" + testLoad.TrackingNumber + "</strong></p>"
+                    + "<p>Customer: " + CustomerName(testLoad) + "</p>"
+                    + "<p>Route: " + testLoad.PickupLocation + " to " + testLoad.DropoffLocation + "</p>"
+                    + "<p>Delivered: " + testLoad.DeliveredDate.Value.ToString("dd MMMM yyyy HH:mm") + "</p>"
+                    + "<p><strong>The 3-day payment window has closed. This account is now overdue.</strong></p>"
+                    + "<p>If this invoice is not settled immediately, Keystone Logistics will hand the account to its attorneys for recovery. That includes small claims court, collection costs, and a block on all future bookings.</p>"
+                    + "<p>Log in and use Pay Now now.</p>";
+                SendEmail(CustomerEmail(testLoad), "OVERDUE: final demand " + testLoad.TrackingNumber, body);
+                SendEmail(AdminEmail, "OVERDUE: final demand " + testLoad.TrackingNumber, body);
+                db.AuditLogs.Add(new AuditLog
+                {
+                    LoadId = testLoad.LoadId,
+                    Action = Clip("OVERDUE notice " + testLoad.TrackingNumber),
+                    PerformedBy = "System",
+                    Timestamp = DateTime.Now
+                });
+                SaveSafe();
+                TempData["ErrorMessage"] = "Overdue demand emailed for " + testLoad.TrackingNumber + ".";
+            }
+
             var loads = db.Loads.Include(l => l.Customer).Include(l => l.Driver).Include(l => l.Vehicle).AsQueryable();
             if (userRole == "Customer") loads = loads.Where(l => l.CustomerId == userId);
             else if (userRole == "Driver") loads = loads.Where(l => l.DriverId == userId || l.WorkStatus == "Accepted");
@@ -330,22 +362,35 @@ namespace KeystoneLogistics.Controllers
         public ActionResult RejectRequest(int id, string rejectionReason)
         {
             if (Session["UserRole"]?.ToString() != "Admin") return RedirectToAction("Index");
-            var load = db.Loads.Find(id);
-            if (load != null)
+            var load = db.Loads.Include(l => l.Customer).FirstOrDefault(l => l.LoadId == id);
+            if (load == null) return RedirectToAction("Index");
+            string reason = string.IsNullOrWhiteSpace(rejectionReason) ? "Declined by dispatch" : rejectionReason.Trim();
+            bool paid = load.Status == "Paid / Processing" || load.Status == "Delivered";
+            load.WorkStatus = "Rejected";
+            load.RejectionReason = reason;
+            load.Status = "Cancelled";
+            db.AuditLogs.Add(new AuditLog
             {
-                load.WorkStatus = "Rejected";
-                load.RejectionReason = rejectionReason;
-                load.Status = "Cancelled";
-                db.AuditLogs.Add(new AuditLog
-                {
-                    LoadId = id,
-                    Action = Clip("Rejected " + load.TrackingNumber + " " + CustomerName(load)),
-                    PerformedBy = "Admin",
-                    Timestamp = DateTime.Now
-                });
-                SaveSafe();
-                TempData["ErrorMessage"] = "Work Request #" + load.TrackingNumber + " Rejected.";
-            }
+                LoadId = id,
+                Action = Clip("Rejected " + load.TrackingNumber + " " + CustomerName(load)),
+                PerformedBy = "Admin",
+                Timestamp = DateTime.Now
+            });
+            SaveSafe();
+            string body = "<h2>Shipment rejected</h2>"
+                + "<p>Tracking: " + load.TrackingNumber + "</p>"
+                + "<p>Customer: " + CustomerName(load) + "</p>"
+                + "<p>Route: " + load.PickupLocation + " to " + load.DropoffLocation + "</p>"
+                + "<p>Cargo: " + load.CargoDescription + "</p>"
+                + "<p>Reason: " + reason + "</p>"
+                + (paid
+                    ? "<p><strong>This job was already paid. Refund the full amount from the PayFast dashboard.</strong></p>"
+                    : "<p>This request was declined before payment. No refund is due.</p>");
+            SendEmail(AdminEmail, "Rejected: " + load.TrackingNumber, body);
+            string customerEmail = CustomerEmail(load);
+            if (!string.Equals(customerEmail, AdminEmail, StringComparison.OrdinalIgnoreCase))
+                SendEmail(customerEmail, "Rejected: " + load.TrackingNumber, body);
+            TempData["ErrorMessage"] = "Work Request #" + load.TrackingNumber + " Rejected. Email sent.";
             return RedirectToAction("Index");
         }
 
@@ -407,7 +452,6 @@ namespace KeystoneLogistics.Controllers
                 TempData["ErrorMessage"] = "Snap a doorstep photo before confirming delivery.";
                 return RedirectToAction("Index");
             }
-
             string photoPath = SaveDeliveryPhoto(podPhoto, load.TrackingNumber);
             db.PODDocuments.Add(new PODDocument
             {
@@ -415,8 +459,8 @@ namespace KeystoneLogistics.Controllers
                 FilePath = "/Content/DeliveryPhotos/" + Path.GetFileName(photoPath),
                 Notes = "Doorstep photo"
             });
-
             DateTime arrived = DateTime.Now;
+            DateTime due = arrived.AddDays(3);
             load.Status = "Delivered";
             load.WorkStatus = "Completed";
             load.CurrentLocation = load.DropoffLocation;
@@ -426,17 +470,15 @@ namespace KeystoneLogistics.Controllers
                 var vehicle = db.Vehicles.Find(load.AssignedVehicleId);
                 if (vehicle != null) vehicle.IsAvailable = true;
             }
-            int packagesToday = JobsCompletedToday(load.DriverId) + 1;
             string cust = CustomerName(load);
             string drv = DriverName(load);
             db.AuditLogs.Add(new AuditLog
             {
                 LoadId = id,
-                Action = Clip("ARRIVE " + arrived.ToString("HH:mm") + " " + load.TrackingNumber + " " + drv + ">" + cust + " photo"),
+                Action = Clip("ARRIVE " + arrived.ToString("HH:mm") + " " + load.TrackingNumber + " pay by " + due.ToString("dd MMM")),
                 PerformedBy = "Driver",
                 Timestamp = DateTime.Now
             });
-
             Load nextJob = null;
             if (load.DriverId.HasValue)
             {
@@ -458,20 +500,20 @@ namespace KeystoneLogistics.Controllers
                 }
             }
             SaveSafe();
-
-            string body = "<h2>Your package has been delivered</h2>"
-                + "<p>Tracking: " + load.TrackingNumber + "</p>"
+            string body = "<h2 style='color:#9B2C2C;'>FINAL NOTICE: PAYMENT IS NOW DUE</h2>"
+                + "<p>Tracking: <strong>" + load.TrackingNumber + "</strong></p>"
                 + "<p>Customer: " + cust + "</p>"
                 + "<p>Driver: " + drv + "</p>"
                 + "<p>Dropoff: " + load.DropoffLocation + "</p>"
-                + "<p>Arrival: " + arrived.ToString("yyyy-MM-dd HH:mm:ss") + "</p>"
-                + "<p>The doorstep photo is attached.</p>";
-            SendEmail(CustomerEmail(load), "Delivered " + load.TrackingNumber, body, photoPath);
-            SendEmail(AdminEmail, "Delivered " + load.TrackingNumber, body, photoPath);
-
+                + "<p>Delivered: " + arrived.ToString("yyyy-MM-dd HH:mm") + ". The doorstep photo is attached.</p>"
+                + "<p><strong>Payment deadline: " + due.ToString("dd MMMM yyyy") + ".</strong></p>"
+                + "<p>If this invoice is still unpaid after that date, Keystone Logistics will hand the account to its attorneys for recovery. That includes small claims court, collection costs, and a block on all future bookings.</p>"
+                + "<p>Log in and use Pay Now before the deadline. Pay Now stays available after the date, but the account will already be marked overdue.</p>";
+            SendEmail(CustomerEmail(load), "FINAL NOTICE: payment due " + load.TrackingNumber, body, photoPath);
+            SendEmail(AdminEmail, "FINAL NOTICE: payment due " + load.TrackingNumber, body, photoPath);
             TempData["SuccessMessage"] = nextJob != null
-                ? load.TrackingNumber + " delivered for " + cust + ". Photo emailed. Next: " + nextJob.TrackingNumber
-                : load.TrackingNumber + " delivered for " + cust + ". Photo emailed.";
+                ? load.TrackingNumber + " delivered for " + cust + ". Payment due " + due.ToString("dd MMM") + ". Next: " + nextJob.TrackingNumber
+                : load.TrackingNumber + " delivered for " + cust + ". Payment due " + due.ToString("dd MMM") + ".";
             return RedirectToAction("Index");
         }
 
