@@ -3,6 +3,11 @@
 @{
     ViewBag.Title = "Driver Payout Checkout";
     var load = Model;
+    decimal amount = ViewBag.Amount != null ? (decimal)ViewBag.Amount : 0m;
+    decimal driverBase = ViewBag.DriverBase != null ? (decimal)ViewBag.DriverBase : 0m;
+    decimal driverRate = ViewBag.DriverRate != null ? (decimal)ViewBag.DriverRate : 0m;
+    decimal distanceKm = ViewBag.DistanceKm != null ? (decimal)ViewBag.DistanceKm : 0m;
+    decimal distanceCharge = ViewBag.DistanceCharge != null ? (decimal)ViewBag.DistanceCharge : 0m;
 }
 
 <div class="container mt-5" style="max-width: 600px;">
@@ -15,12 +20,15 @@
         <p><strong>Dropoff:</strong> @load.DropoffLocation</p>
         <p><strong>Cargo:</strong> @load.CargoDescription</p>
 
-        <p class="mt-3">
+        <p class="mt-3 mb-1">
             <strong>Amount to Pay Driver:</strong>
-            <span class="h4 text-success font-weight-bold">R @(((decimal)ViewBag.Amount).ToString("N2")) ZAR</span>
+            <span class="h4 text-success font-weight-bold">R @amount.ToString("N2") ZAR</span>
         </p>
-        <div class="small text-muted mb-4">
-            Fixed driver payout for completed delivery.
+
+        <div class="small text-muted mb-4" style="border-left: 3px solid #2F6F5E; padding-left: 10px;">
+            <div>Driver base fee: R @driverBase.ToString("N2")</div>
+            <div>Distance (@distanceKm.ToString("N1") km × R @driverRate.ToString("N2")): R @distanceCharge.ToString("N2")</div>
+            <div class="font-weight-bold">Total payout: R @amount.ToString("N2")</div>
         </div>
 
         <form action="@ViewBag.PayFastUrl" method="POST" class="mt-4">
@@ -31,7 +39,7 @@
             <input type="hidden" name="notify_url" value="@ViewBag.NotifyUrl" />
 
             <input type="hidden" name="m_payment_id" value="@load.LoadId" />
-            <input type="hidden" name="amount" value="@(((decimal)ViewBag.Amount).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))" />
+            <input type="hidden" name="amount" value="@amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" />
             <input type="hidden" name="item_name" value="Driver Payout - @load.TrackingNumber" />
 
             <input type="hidden" name="name_first" value="Admin" />

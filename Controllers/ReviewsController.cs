@@ -25,15 +25,18 @@ namespace KeystoneLogistics.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(int rating, string comment)
+        public ActionResult Create(int rating, string comment, string reviewerName)
         {
             if (Session["UserRole"]?.ToString() != "Customer")
                 return RedirectToAction("Index", "Loads");
 
             comment = (comment ?? "").Trim();
+            reviewerName = (reviewerName ?? "").Trim();
             if (rating < 1) rating = 1;
             if (rating > 5) rating = 5;
             if (comment.Length > 180) comment = comment.Substring(0, 180);
+            if (reviewerName.Length > 60) reviewerName = reviewerName.Substring(0, 60);
+            if (string.IsNullOrWhiteSpace(reviewerName)) reviewerName = "Anonymous";
 
             if (!string.IsNullOrWhiteSpace(comment))
             {
@@ -44,7 +47,7 @@ namespace KeystoneLogistics.Controllers
                     ReviewId = reviews.Count + 1,
                     Rating = rating,
                     Comment = comment,
-                    CustomerName = Session["Username"]?.ToString() ?? "Customer",
+                    CustomerName = reviewerName,
                     DatePosted = DateTime.Now
                 });
                 var serializer = new JavaScriptSerializer();

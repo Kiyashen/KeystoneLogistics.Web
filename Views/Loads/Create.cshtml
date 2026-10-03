@@ -2,7 +2,6 @@
 @{
     ViewBag.Title = "Book Freight Shipment";
 }
-
 <style>
     .book-card {
         background: #FFFCF7;
@@ -28,8 +27,15 @@
         font-size: 12px;
         color: #5C5348;
     }
-</style>
 
+    .area-error {
+        color: #9B2C2C;
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 6px;
+        display: none;
+    }
+</style>
 <div class="container py-4" style="max-width: 750px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -43,12 +49,18 @@
         </a>
     </div>
 
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger font-weight-bold" role="alert">
+            <i class="fa-solid fa-triangle-exclamation mr-2"></i>@TempData["ErrorMessage"]
+        </div>
+    }
+
     <div class="book-card p-4 p-md-5">
-        @using (Html.BeginForm())
+        @using (Html.BeginForm("Create", "Loads", FormMethod.Post, new { id = "bookForm" }))
         {
             @Html.AntiForgeryToken()
             @Html.ValidationSummary(true, "", new { @class = "alert alert-danger border-0 mb-4" })
-
             <div class="mb-4 pb-3 border-bottom">
                 <h5 class="font-weight-bold mb-3">
                     <i class="fa-solid fa-user-shield mr-2" style="color: #2F6F5E;"></i>Customer Database Verification
@@ -75,7 +87,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="mb-4">
                 <h5 class="font-weight-bold mb-3">
                     <i class="fa-solid fa-route mr-2" style="color: #2F6F5E;"></i>Shipment Specifications
@@ -83,11 +94,13 @@
                 <div class="form-group mb-3">
                     <label class="font-weight-bold small text-uppercase" style="letter-spacing: 0.5px;">Pickup Location *</label>
                     @Html.TextBoxFor(model => model.PickupLocation, new { @class = "form-control", @id = "PickupLocation", @placeholder = "e.g., Durban Port Terminal", @required = "required" })
+                    <div id="pickupAreaError" class="area-error">We only accommodate deliveries between Durban and Pietermaritzburg and the surrounding areas.</div>
                     @Html.ValidationMessageFor(model => model.PickupLocation, "", new { @class = "text-danger small" })
                 </div>
                 <div class="form-group mb-3">
                     <label class="font-weight-bold small text-uppercase" style="letter-spacing: 0.5px;">Dropoff Location *</label>
                     @Html.TextBoxFor(model => model.DropoffLocation, new { @class = "form-control", @id = "DropoffLocation", @placeholder = "e.g., Pietermaritzburg Central Hub", @required = "required" })
+                    <div id="dropoffAreaError" class="area-error">We only accommodate deliveries between Durban and Pietermaritzburg and the surrounding areas.</div>
                     @Html.ValidationMessageFor(model => model.DropoffLocation, "", new { @class = "text-danger small" })
                 </div>
                 <div class="form-group mb-4">
@@ -96,7 +109,6 @@
                     @Html.ValidationMessageFor(model => model.CargoDescription, "", new { @class = "text-danger small" })
                 </div>
             </div>
-
             <div class="mb-4">
                 <label class="text-uppercase font-weight-bold small mb-2" style="letter-spacing: 0.5px;">Terms, Conditions & Liability Waiver *</label>
                 <div class="tc-scroll-box mb-3">
@@ -112,7 +124,6 @@
                     </label>
                 </div>
             </div>
-
             <div class="d-flex justify-content-between align-items-center pt-3 border-top">
                 <a href="@Url.Action("Index")" class="btn btn-outline-secondary px-4 py-2" style="border-radius: 8px;">Cancel</a>
                 <button type="submit" class="btn font-weight-bold px-4 py-2 text-white shadow-sm" style="border-radius: 8px; background-color: #2F6F5E; border: none;">
@@ -122,3 +133,28 @@
         }
     </div>
 </div>
+<script>
+    var blocked = ["cape town", "capetown", "johannesburg", "joburg", "pretoria", "soweto", "sandton", "centurion", "bloemfontein", "port elizabeth", "gqeberha", "east london", "polokwane", "nelspruit", "mbombela", "kimberley", "rustenburg", "america", "usa", "united states", "london", "uk", "england", "india", "china", "nigeria", "zimbabwe", "mozambique"];
+    function outsideArea(value) {
+        var text = (value || "").toLowerCase();
+        for (var i = 0; i < blocked.length; i++) {
+            if (text.indexOf(blocked[i]) !== -1) return true;
+        }
+        return false;
+    }
+    function flag(inputId, errorId) {
+        var input = document.getElementById(inputId);
+        var error = document.getElementById(errorId);
+        var bad = outsideArea(input.value);
+        error.style.display = bad ? "block" : "none";
+        input.style.borderColor = bad ? "#9B2C2C" : "";
+        return bad;
+    }
+    document.getElementById("PickupLocation").addEventListener("blur", function () { flag("PickupLocation", "pickupAreaError"); });
+    document.getElementById("DropoffLocation").addEventListener("blur", function () { flag("DropoffLocation", "dropoffAreaError"); });
+    document.getElementById("bookForm").addEventListener("submit", function (e) {
+        var badPickup = flag("PickupLocation", "pickupAreaError");
+        var badDropoff = flag("DropoffLocation", "dropoffAreaError");
+        if (badPickup || badDropoff) e.preventDefault();
+    });
+</script>

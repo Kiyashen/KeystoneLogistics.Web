@@ -267,6 +267,122 @@
     }
     @if (userRole == "Admin")
     {
+        var all = loadList.ToList();
+        int totalJobs = all.Count;
+        int pendingJobs = all.Count(l => l.Status == "Pending" || l.WorkStatus == "Pending");
+        int queuedJobs = all.Count(l => l.Status == "Queued");
+        int activeJobs = all.Count(l => l.Status == "Dispatched" || l.Status == "En Route");
+        int deliveredJobs = all.Count(l => l.Status == "Delivered");
+        int paidJobs = all.Count(l => l.Status == "Paid / Processing");
+        int completedJobs = all.Count(l => l.Status == "Completed" || l.WorkStatus == "Completed");
+        int rejectedJobs = all.Count(l => l.Status == "Cancelled" || l.WorkStatus == "Rejected");
+        int decidedJobs = completedJobs + rejectedJobs;
+        decimal completionRate = decidedJobs == 0 ? 0 : Math.Round((decimal)completedJobs / decidedJobs * 100, 1);
+        decimal rejectRate = decidedJobs == 0 ? 0 : Math.Round((decimal)rejectedJobs / decidedJobs * 100, 1);
+        int unassignedJobs = all.Count(l => l.DriverId == null && l.Status != "Cancelled");
+        var driverRows = all.Where(l => l.Driver != null)
+            .GroupBy(l => l.Driver.FullName)
+            .Select(g => new
+            {
+                Name = g.Key,
+                Jobs = g.Count(),
+                Done = g.Count(x => x.Status == "Completed" || x.Status == "Delivered" || x.Status == "Paid / Processing")
+            })
+            .OrderByDescending(x => x.Jobs)
+            .Take(5)
+            .ToList();
+        var customerRows = all.Where(l => l.Customer != null)
+            .GroupBy(l => string.IsNullOrWhiteSpace(l.Customer.CompanyName) ? l.Customer.ContactPerson : l.Customer.CompanyName)
+            .Select(g => new { Name = g.Key, Jobs = g.Count() })
+            .OrderByDescending(x => x.Jobs)
+            .Take(5)
+            .ToList();
+        <div class="card shadow mb-5" style="border-radius: 16px; overflow: hidden;">
+            <div class="card-header py-3" style="background: #3A3226; color: #F4EFE6;">
+                <h5 class="mb-0 font-weight-bold"><i class="fa-solid fa-chart-column mr-2"></i>Dispatch Analytics</h5>
+                <small>Live figures from the shipment records above. Nothing here is sample data.</small>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-4">
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#C47B2D;border-radius:12px;"><div class="h3 mb-0">@pendingJobs</div><small>Waiting on admin</small></div></div>
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#2F6F5E;border-radius:12px;"><div class="h3 mb-0">@activeJobs</div><small>On the road</small></div></div>
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#3D6F8F;border-radius:12px;"><div class="h3 mb-0">@queuedJobs</div><small>Queued behind a job</small></div></div>
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#B45309;border-radius:12px;"><div class="h3 mb-0">@deliveredJobs</div><small>Awaiting payment</small></div></div>
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#166534;border-radius:12px;"><div class="h3 mb-0">@completionRate%</div><small>Completion rate</small></div></div>
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#9B2C2C;border-radius:12px;"><div class="h3 mb-0">@rejectRate%</div><small>Rejection rate</small></div></div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-7 mb-4">
+                        <h6 class="font-weight-bold">Pipeline</h6>
+                        <canvas id="statusChart" height="130"></canvas>
+                    </div>
+                    <div class="col-lg-5 mb-4">
+                        <h6 class="font-weight-bold">Decided jobs</h6>
+                        <canvas id="outcomeChart" height="130"></canvas>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold">Driver workload</h6>
+                        <table class="table table-sm table-bordered">
+                            <thead style="background:#EBE3D4;"><tr><th>Driver</th><th>Assigned jobs</th><th>Delivered or paid</th></tr></thead>
+                            <tbody>
+                                @foreach (var row in driverRows)
+                                {
+                                    <tr><td>@row.Name</td><td>@row.Jobs</td><td>@row.Done</td></tr>
+                                }
+                                @if (!driverRows.Any())
+                                {
+                                    <tr><td colspan="3" class="text-muted">No drivers assigned yet.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold">Customer demand</h6>
+                        <table class="table table-sm table-bordered">
+                            <thead style="background:#EBE3D4;"><tr><th>Customer</th><th>Bookings</th></tr></thead>
+                            <tbody>
+                                @foreach (var row in customerRows)
+                                {
+                                    <tr><td>@row.Name</td><td>@row.Jobs</td></tr>
+                                }
+                                @if (!customerRows.Any())
+                                {
+                                    <tr><td colspan="2" class="text-muted">No customer bookings yet.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                        <p class="small text-muted mb-0">Unassigned open jobs: @unassignedJobs. Paid and waiting for driver payout: @paidJobs. Closed jobs: @completedJobs of @totalJobs.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <script>
+            new Chart(document.getElementById('statusChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Pending', 'Queued', 'On road', 'Delivered', 'Paid', 'Completed', 'Rejected'],
+                    datasets: [{
+                        label: 'Shipments',
+                        data: [@pendingJobs, @queuedJobs, @activeJobs, @deliveredJobs, @paidJobs, @completedJobs, @rejectedJobs],
+                        backgroundColor: ['#C47B2D', '#3D6F8F', '#2F6F5E', '#B45309', '#166534', '#14532D', '#9B2C2C']
+                    }]
+                },
+                options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+            });
+            new Chart(document.getElementById('outcomeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Rejected'],
+                    datasets: [{ data: [@completedJobs, @rejectedJobs], backgroundColor: ['#2F6F5E', '#9B2C2C'] }]
+                }
+            });
+        </script>
+    }
+    @if (userRole == "Admin")
+    {
         <div class="card shadow mb-5">
             <div class="card-header py-3">
                 <h5 class="mb-0 font-weight-bold">System Audit Trail & History</h5>
@@ -321,7 +437,7 @@
         <div class="modal fade" id="deliveryModal@(item.LoadId)" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    @using (Html.BeginForm("MarkDelivered", "Loads", FormMethod.Post))
+                    @using (Html.BeginForm("MarkDelivered", "Loads", FormMethod.Post, new { enctype = "multipart/form-data" }))
                     {
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@item.LoadId" />
@@ -330,7 +446,14 @@
                             <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                         </div>
                         <div class="modal-body">
-                            <input type="text" name="scannedQRCode" class="form-control" placeholder="e.g. @item.TrackingNumber" required />
+                            <label class="small font-weight-bold">Tracking number</label>
+                            <input type="text" name="scannedQRCode" class="form-control mb-3" placeholder="e.g. @item.TrackingNumber" required />
+                            <label class="small font-weight-bold">Doorstep photo</label>
+                            <video id="cam@(item.LoadId)" autoplay playsinline style="width:100%; border-radius:8px; background:#111; display:none;"></video>
+                            <img id="shot@(item.LoadId)" alt="Delivery photo" style="width:100%; border-radius:8px; display:none;" />
+                            <input type="file" name="podPhoto" id="file@(item.LoadId)" accept="image/*" capture="environment" class="d-none" required />
+                            <button type="button" class="btn btn-outline-secondary btn-block mt-2" onclick="openDeliveryCamera(@item.LoadId)">Open camera</button>
+                            <button type="button" class="btn btn-outline-success btn-block" onclick="snapDeliveryPhoto(@item.LoadId)">Snap photo</button>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
@@ -496,5 +619,39 @@
         window.print();
         document.body.innerHTML = originalContents;
         location.reload();
+    }
+    function openDeliveryCamera(id) {
+        var video = document.getElementById('cam' + id);
+        video.style.display = 'block';
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            document.getElementById('file' + id).click();
+            return;
+        }
+        navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
+            video.srcObject = stream;
+        }).catch(function () {
+            document.getElementById('file' + id).click();
+        });
+    }
+    function snapDeliveryPhoto(id) {
+        var video = document.getElementById('cam' + id);
+        var img = document.getElementById('shot' + id);
+        var fileInput = document.getElementById('file' + id);
+        if (!video.srcObject) {
+            fileInput.click();
+            return;
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        img.src = canvas.toDataURL('image/jpeg');
+        img.style.display = 'block';
+        canvas.toBlob(function (blob) {
+            var file = new File([blob], 'delivery.jpg', { type: 'image/jpeg' });
+            var data = new DataTransfer();
+            data.items.add(file);
+            fileInput.files = data.files;
+        }, 'image/jpeg');
     }
 </script>
