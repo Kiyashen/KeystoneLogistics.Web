@@ -1,6 +1,7 @@
 ﻿@model KeystoneLogistics.Models.Load
 @{
     ViewBag.Title = "Book Freight Shipment";
+    var savedPlaces = (ViewBag.SavedPlaces as IEnumerable<string>) ?? Enumerable.Empty<string>();
 }
 <style>
     .book-card {
@@ -35,6 +36,14 @@
         margin-top: 6px;
         display: none;
     }
+
+    .fee-note {
+        background: #EBE3D4;
+        border-radius: 8px;
+        padding: 12px 14px;
+        font-size: 13px;
+        color: #3A3226;
+    }
 </style>
 <div class="container py-4" style="max-width: 750px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -48,14 +57,12 @@
             <i class="fa-solid fa-arrow-left mr-1"></i> Back
         </a>
     </div>
-
     @if (TempData["ErrorMessage"] != null)
     {
         <div class="alert alert-danger font-weight-bold" role="alert">
             <i class="fa-solid fa-triangle-exclamation mr-2"></i>@TempData["ErrorMessage"]
         </div>
     }
-
     <div class="book-card p-4 p-md-5">
         @using (Html.BeginForm("Create", "Loads", FormMethod.Post, new { id = "bookForm" }))
         {
@@ -93,20 +100,41 @@
                 </h5>
                 <div class="form-group mb-3">
                     <label class="font-weight-bold small text-uppercase" style="letter-spacing: 0.5px;">Pickup Location *</label>
-                    @Html.TextBoxFor(model => model.PickupLocation, new { @class = "form-control", @id = "PickupLocation", @placeholder = "e.g., Durban Port Terminal", @required = "required" })
+                    @Html.TextBoxFor(model => model.PickupLocation, new { @class = "form-control", @id = "PickupLocation", @list = "savedPlaces", @placeholder = "e.g., Durban Port Terminal", @required = "required", autocomplete = "off" })
+                    <small class="form-text" style="color: #6B6358;">Start typing to reuse a place you booked before.</small>
                     <div id="pickupAreaError" class="area-error">We only accommodate deliveries between Durban and Pietermaritzburg and the surrounding areas.</div>
+                    <div id="samePlaceError" class="area-error">Pickup and drop-off cannot be the same place.</div>
                     @Html.ValidationMessageFor(model => model.PickupLocation, "", new { @class = "text-danger small" })
                 </div>
                 <div class="form-group mb-3">
                     <label class="font-weight-bold small text-uppercase" style="letter-spacing: 0.5px;">Dropoff Location *</label>
-                    @Html.TextBoxFor(model => model.DropoffLocation, new { @class = "form-control", @id = "DropoffLocation", @placeholder = "e.g., Pietermaritzburg Central Hub", @required = "required" })
+                    @Html.TextBoxFor(model => model.DropoffLocation, new { @class = "form-control", @id = "DropoffLocation", @list = "savedPlaces", @placeholder = "e.g., Pietermaritzburg Central Hub", @required = "required", autocomplete = "off" })
+                    <small class="form-text" style="color: #6B6358;">Start typing to reuse a place you booked before.</small>
                     <div id="dropoffAreaError" class="area-error">We only accommodate deliveries between Durban and Pietermaritzburg and the surrounding areas.</div>
                     @Html.ValidationMessageFor(model => model.DropoffLocation, "", new { @class = "text-danger small" })
                 </div>
-                <div class="form-group mb-4">
+                <datalist id="savedPlaces">
+                    @foreach (var place in savedPlaces)
+                    {
+                        <option value="@place"></option>
+                    }
+                </datalist>
+                <div class="form-group mb-3">
                     <label class="font-weight-bold small text-uppercase" style="letter-spacing: 0.5px;">Cargo Description *</label>
                     @Html.TextAreaFor(model => model.CargoDescription, new { @class = "form-control", @id = "CargoDescription", @rows = "4", @placeholder = "e.g., 50 Pallets of Consumer Goods", @required = "required" })
                     @Html.ValidationMessageFor(model => model.CargoDescription, "", new { @class = "text-danger small" })
+                </div>
+                <div class="fee-note mb-3">
+                    <strong>How you are charged.</strong>
+                    The quote is a R500 base fee plus R12 per kilometre. You do not guess the weight.
+                    The driver weighs the package at pickup, and R1.50 per kilogram is added on the final invoice.
+                </div>
+                <div class="custom-control custom-checkbox mb-4">
+                    <input type="checkbox" class="custom-control-input" id="IsFragile" name="IsFragile" value="true" />
+                    <label class="custom-control-label" for="IsFragile">
+                        This package is <strong>fragile</strong>. Handle with care.
+                    </label>
+                    <small class="form-text" style="color: #6B6358;">The driver will see a FRAGILE flag on this job.</small>
                 </div>
             </div>
             <div class="mb-4">
@@ -142,6 +170,11 @@
         }
         return false;
     }
+    function samePlace() {
+        var pickup = document.getElementById("PickupLocation").value.trim().toLowerCase();
+        var dropoff = document.getElementById("DropoffLocation").value.trim().toLowerCase();
+        return pickup.length > 0 && pickup === dropoff;
+    }
     function flag(inputId, errorId) {
         var input = document.getElementById(inputId);
         var error = document.getElementById(errorId);
@@ -150,11 +183,27 @@
         input.style.borderColor = bad ? "#9B2C2C" : "";
         return bad;
     }
-    document.getElementById("PickupLocation").addEventListener("blur", function () { flag("PickupLocation", "pickupAreaError"); });
-    document.getElementById("DropoffLocation").addEventListener("blur", function () { flag("DropoffLocation", "dropoffAreaError"); });
+    function flagSame() {
+        var bad = samePlace();
+        document.getElementById("samePlaceError").style.display = bad ? "block" : "none";
+        if (bad) {
+            document.getElementById("PickupLocation").style.borderColor = "#9B2C2C";
+            document.getElementById("DropoffLocation").style.borderColor = "#9B2C2C";
+        }
+        return bad;
+    }
+    document.getElementById("PickupLocation").addEventListener("blur", function () {
+        flag("PickupLocation", "pickupAreaError");
+        flagSame();
+    });
+    document.getElementById("DropoffLocation").addEventListener("blur", function () {
+        flag("DropoffLocation", "dropoffAreaError");
+        flagSame();
+    });
     document.getElementById("bookForm").addEventListener("submit", function (e) {
         var badPickup = flag("PickupLocation", "pickupAreaError");
         var badDropoff = flag("DropoffLocation", "dropoffAreaError");
-        if (badPickup || badDropoff) e.preventDefault();
+        var badSame = flagSame();
+        if (badPickup || badDropoff || badSame) e.preventDefault();
     });
 </script>

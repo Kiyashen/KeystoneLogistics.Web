@@ -72,6 +72,59 @@
     }
     @if (userRole == "Driver")
     {
+        var roadAlerts = auditLogs
+            .Where(a => a.Action != null && a.Action.StartsWith("ROAD"))
+            .OrderByDescending(a => a.Timestamp)
+            .Take(5)
+            .ToList();
+        if (roadAlerts.Any())
+        {
+            <div class="alert alert-warning shadow-sm">
+                <strong>Live road updates</strong>
+                @foreach (var alert in roadAlerts)
+                {
+                    <div>@(alert.Timestamp.HasValue ? alert.Timestamp.Value.ToString("HH:mm") : "") — @alert.PerformedBy: @alert.Action</div>
+                }
+            </div>
+        }
+        var lastDelivered = loadList
+            .Where(l => l.Status == "Delivered" || l.Status == "Paid / Processing" || l.Status == "Completed")
+            .OrderByDescending(l => l.DeliveredDate)
+            .FirstOrDefault();
+        var returnLog = lastDelivered == null
+            ? null
+            : auditLogs.FirstOrDefault(a => a.LoadId == lastDelivered.LoadId && a.Action != null && a.Action.StartsWith("RETURN"));
+        <div class="card shadow-sm mb-3" style="border-left: 5px solid #2F6F5E;">
+            <div class="card-body py-3 d-flex justify-content-between align-items-center flex-wrap">
+                <div class="mr-3">
+                    <div class="font-weight-bold">Back at base</div>
+                    @if (lastDelivered == null)
+                    {
+                        <div class="small text-muted">Finish a drop-off first. Then tap once when you are back.</div>
+                    }
+                    else if (returnLog == null)
+                    {
+                        <div class="small text-muted">Last drop-off @lastDelivered.TrackingNumber. Tap once when you are back.</div>
+                    }
+                    else
+                    {
+                        <div class="small text-muted">Return logged for @lastDelivered.TrackingNumber at @(returnLog.Timestamp.HasValue ? returnLog.Timestamp.Value.ToString("HH:mm") : "").</div>
+                    }
+                </div>
+                @if (lastDelivered != null && returnLog == null)
+                {
+                    using (Html.BeginForm("CheckIn", "Loads", FormMethod.Post, new { @class = "mb-0" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success">I'm back. Log return</button>
+                    }
+                }
+                else if (returnLog != null)
+                {
+                    <span class="badge badge-success p-2">RETURN @(returnLog.Timestamp.HasValue ? returnLog.Timestamp.Value.ToString("HH:mm") : "")</span>
+                }
+            </div>
+        </div>
         <div class="row">
             @if (!loadList.Any())
             {
@@ -92,17 +145,63 @@
                                 </div>
                                 <div class="small text-muted mb-1"><i class="fa-solid fa-location-dot mr-1"></i>@item.PickupLocation</div>
                                 <div class="small text-muted mb-3"><i class="fa-solid fa-flag-checkered mr-1"></i>@item.DropoffLocation</div>
-                                <div class="small mb-3"><strong>Cargo:</strong> @item.CargoDescription</div>
+                                <div class="small mb-3">
+                                    <strong>Cargo:</strong> @item.CargoDescription
+                                    @if ((item.CargoDescription ?? "").IndexOf("fragile", StringComparison.OrdinalIgnoreCase) >= 0)
+                                    {
+                                        <span class="badge badge-warning ml-1">FRAGILE</span>
+                                    }
+                                </div>
                                 <button type="button" class="btn btn-sm btn-outline-info mb-3"
                                         onclick="openMapModal('@item.TrackingNumber', '@item.PickupLocation', '@item.DropoffLocation', '@item.Status')">
                                     Live Route
                                 </button>
-                                @if (item.Status == "Dispatched" && !(item.IsCollected ?? false))
-                                {
-                                    using (Html.BeginForm("VerifyCollection", "Loads", FormMethod.Post))
+                                <div class="small font-weight-bold mb-2">Road update. Tap only. No typing.</div>
+                                <div class="d-flex flex-wrap mb-3">
+                                    @using (Html.BeginForm("RoadAlert", "Loads", FormMethod.Post, new { @class = "mr-1 mb-1" }))
                                     {
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@item.LoadId" />
+                                        <input type="hidden" name="alertType" value="traffic" />
+                                        <button type="submit" class="btn btn-sm btn-warning">Heavy traffic</button>
+                                    }
+                                    @using (Html.BeginForm("RoadAlert", "Loads", FormMethod.Post, new { @class = "mr-1 mb-1" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.LoadId" />
+                                        <input type="hidden" name="alertType" value="blocked" />
+                                        <button type="submit" class="btn btn-sm btn-danger">Road blocked</button>
+                                    }
+                                    @using (Html.BeginForm("RoadAlert", "Loads", FormMethod.Post, new { @class = "mr-1 mb-1" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.LoadId" />
+                                        <input type="hidden" name="alertType" value="construction" />
+                                        <button type="submit" class="btn btn-sm btn-secondary">Construction</button>
+                                    }
+                                    @using (Html.BeginForm("RoadAlert", "Loads", FormMethod.Post, new { @class = "mr-1 mb-1" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.LoadId" />
+                                        <input type="hidden" name="alertType" value="risk" />
+                                        <button type="submit" class="btn btn-sm btn-dark">High-risk area</button>
+                                    }
+                                </div>
+                                @if (item.Status == "Dispatched" && !(item.IsCollected ?? false))
+                                {
+                                    using (Html.BeginForm("VerifyCollection", "Loads", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.LoadId" />
+                                        <label class="small font-weight-bold">Package photo at pickup</label>
+                                        <video id="pcam@(item.LoadId)" autoplay playsinline style="width:100%; border-radius:8px; background:#111; display:none;"></video>
+                                        <img id="pshot@(item.LoadId)" alt="Pickup photo" style="width:100%; border-radius:8px; display:none; margin-bottom:8px;" />
+                                        <input type="file" name="pickupPhoto" id="pfile@(item.LoadId)" accept="image/*" capture="environment" class="d-none" required />
+                                        <button type="button" class="btn btn-outline-secondary btn-block mb-1" onclick="openPickupCamera(@item.LoadId)">Open camera</button>
+                                        <button type="button" class="btn btn-outline-success btn-block mb-2" onclick="snapPickupPhoto(@item.LoadId)">Snap package photo</button>
+                                        <label class="small font-weight-bold">Actual weight at pickup (kg)</label>
+                                        <input type="number" name="actualWeightKg" class="form-control form-control-lg mb-2 text-center" placeholder="e.g. 45" step="0.1" min="0.1" required style="font-size:1.2rem;" />
+                                        <small class="form-text text-muted mb-2">Weigh the package. R1.50 per kg is added to the customer invoice.</small>
                                         <input type="text" name="enteredPasscode" class="form-control form-control-lg mb-2 text-center" placeholder="4-Digit PIN" required style="font-size:1.4rem; letter-spacing:4px;" />
                                         <button type="submit" class="btn btn-primary btn-lg btn-block">Verify Pickup</button>
                                     }
@@ -172,7 +271,13 @@
                                                 Live Route
                                             </button>
                                         </td>
-                                        <td>@item.CargoDescription</td>
+                                        <td>
+                                            @item.CargoDescription
+                                            @if ((item.CargoDescription ?? "").IndexOf("fragile", StringComparison.OrdinalIgnoreCase) >= 0)
+                                            {
+                                                <div class="badge badge-warning mt-1">FRAGILE — handle with care</div>
+                                            }
+                                        </td>
                                         <td>
                                             <span class="badge badge-secondary">@item.Status</span>
                                             @if (overdue)
@@ -305,18 +410,31 @@
         decimal customersOwe = all.Where(l => l.Status == "Delivered").Sum(l => l.QuotedAmount);
         decimal owedToDrivers = all.Where(l => l.Status == "Paid / Processing").Sum(l => l.DriverCut);
         decimal paidToDrivers = all.Where(l => l.Status == "Completed").Sum(l => l.DriverCut);
+        decimal grossProfit = earned - paidToDrivers;
         decimal net = earned - paidToDrivers - owedToDrivers;
+        decimal billed = earned + customersOwe;
+        decimal margin = earned == 0 ? 0 : Math.Round(grossProfit / earned * 100, 1);
+        decimal collectionRate = billed == 0 ? 0 : Math.Round(earned / billed * 100, 1);
+        int paidCount = all.Count(l => l.Status == "Paid / Processing" || l.Status == "Completed");
+        decimal avgTicket = paidCount == 0 ? 0 : Math.Round(earned / paidCount, 0);
+        var monthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        var monthLoads = all.Where(l => (l.Status == "Paid / Processing" || l.Status == "Completed") && l.DeliveredDate.HasValue && l.DeliveredDate.Value >= monthStart).ToList();
+        decimal monthRevenue = monthLoads.Sum(l => l.QuotedAmount);
+        decimal monthDriverSpend = monthLoads.Sum(l => l.DriverCut);
+        decimal monthProfit = monthRevenue - monthDriverSpend;
+        int companyCount = all.Where(l => l.Customer != null).Select(l => l.CustomerId).Distinct().Count();
+        decimal health = Math.Max(0, Math.Min(100, Math.Round(collectionRate - (overdueJobs * 4) - (rejectRate / 2), 0)));
         var driverRows = all.Where(l => l.Driver != null)
             .GroupBy(l => l.Driver.FullName)
-             .Select(g => new
-             {
-                 Name = g.Key,
-                 Jobs = g.Count(),
-                 Done = g.Count(x => x.Status == "Completed" || x.Status == "Delivered" || x.Status == "Paid / Processing"),
-                 Owed = g.Where(x => x.Status == "Paid / Processing").Sum(x => x.DriverCut),
-                 Paid = g.Where(x => x.Status == "Completed").Sum(x => x.DriverCut)
-             })
-            .OrderByDescending(x => x.Jobs)
+            .Select(g => new
+            {
+                Name = g.Key,
+                Jobs = g.Count(),
+                Done = g.Count(x => x.Status == "Completed" || x.Status == "Delivered" || x.Status == "Paid / Processing"),
+                Owed = g.Where(x => x.Status == "Paid / Processing").Sum(x => x.DriverCut),
+                Paid = g.Where(x => x.Status == "Completed").Sum(x => x.DriverCut)
+            })
+            .OrderByDescending(x => x.Paid + x.Owed)
             .Take(5)
             .ToList();
         var customerRows = all.Where(l => l.Customer != null)
@@ -328,44 +446,61 @@
                 Owes = g.Where(x => x.Status == "Delivered").Sum(x => x.QuotedAmount),
                 Paid = g.Where(x => x.Status == "Paid / Processing" || x.Status == "Completed").Sum(x => x.QuotedAmount)
             })
-            .OrderByDescending(x => x.Jobs)
+            .OrderByDescending(x => x.Paid)
             .Take(5)
             .ToList();
         <div class="card shadow mb-5" style="border-radius: 16px; overflow: hidden;">
             <div class="card-header py-3" style="background: #3A3226; color: #F4EFE6;">
                 <h5 class="mb-0 font-weight-bold"><i class="fa-solid fa-chart-column mr-2"></i>Dispatch Analytics</h5>
-                <small>Live figures from the shipment records above. Money uses the same fee rules as checkout.</small>
+                <small style="color:#EBE3D4;">Live figures from the shipment records above. Money uses the same fee rules as checkout.</small>
             </div>
             <div class="card-body">
-                <div class="row text-center mb-4">
-                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#C47B2D;border-radius:12px;"><div class="h3 mb-0">@pendingJobs</div><small>Waiting on admin</small></div></div>
-                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#2F6F5E;border-radius:12px;"><div class="h3 mb-0">@activeJobs</div><small>On the road</small></div></div>
-                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#3D6F8F;border-radius:12px;"><div class="h3 mb-0">@queuedJobs</div><small>Queued behind a job</small></div></div>
-                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#B45309;border-radius:12px;"><div class="h3 mb-0">@deliveredJobs</div><small>Awaiting payment</small></div></div>
-                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#166534;border-radius:12px;"><div class="h3 mb-0">@completionRate%</div><small>Completion rate</small></div></div>
-                    <div class="col-6 col-md-2 mb-3"><div class="p-3 text-white" style="background:#9B2C2C;border-radius:12px;"><div class="h3 mb-0">@overdueJobs</div><small>Payment overdue</small></div></div>
+                <div class="row text-center mb-3">
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3" style="background:#C47B2D;border-radius:12px;"><div class="h3 mb-0" style="color:#1A140E;font-weight:800;">@pendingJobs</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Waiting on admin</div></div></div>
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3" style="background:#2F6F5E;border-radius:12px;"><div class="h3 mb-0" style="color:#1A140E;font-weight:800;">@activeJobs</div><div style="color:#1A140E;font-weight:700;font-size:13px;">On the road</div></div></div>
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3" style="background:#3D6F8F;border-radius:12px;"><div class="h3 mb-0" style="color:#1A140E;font-weight:800;">@queuedJobs</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Queued behind a job</div></div></div>
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3" style="background:#B45309;border-radius:12px;"><div class="h3 mb-0" style="color:#1A140E;font-weight:800;">@deliveredJobs</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Awaiting payment</div></div></div>
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3" style="background:#166534;border-radius:12px;"><div class="h3 mb-0" style="color:#1A140E;font-weight:800;">@completionRate%</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Completion rate</div></div></div>
+                    <div class="col-6 col-md-2 mb-3"><div class="p-3" style="background:#9B2C2C;border-radius:12px;"><div class="h3 mb-0" style="color:#1A140E;font-weight:800;">@overdueJobs</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Payment overdue</div></div></div>
+                </div>
+                <div class="row text-center mb-3">
+                    <div class="col-md-3 mb-3"><div class="p-3" style="background:#166534;border-radius:12px;"><div class="h4 mb-0" style="color:#1A140E;font-weight:800;">R @earned.ToString("N0")</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Revenue collected</div></div></div>
+                    <div class="col-md-3 mb-3"><div class="p-3" style="background:#9B2C2C;border-radius:12px;"><div class="h4 mb-0" style="color:#1A140E;font-weight:800;">R @customersOwe.ToString("N0")</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Customers still owe</div></div></div>
+                    <div class="col-md-3 mb-3"><div class="p-3" style="background:#B45309;border-radius:12px;"><div class="h4 mb-0" style="color:#1A140E;font-weight:800;">R @owedToDrivers.ToString("N0")</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Still to pay drivers</div></div></div>
+                    <div class="col-md-3 mb-3"><div class="p-3" style="background:#3D6F8F;border-radius:12px;"><div class="h4 mb-0" style="color:#1A140E;font-weight:800;">R @net.ToString("N0")</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Left after driver pay</div></div></div>
                 </div>
                 <div class="row text-center mb-4">
-                    <div class="col-md-3 mb-3"><div class="p-3 text-white" style="background:#166534;border-radius:12px;"><div class="h4 mb-0">R @earned.ToString("N0")</div><small>Money received</small></div></div>
-                    <div class="col-md-3 mb-3"><div class="p-3 text-white" style="background:#9B2C2C;border-radius:12px;"><div class="h4 mb-0">R @customersOwe.ToString("N0")</div><small>Customers still owe</small></div></div>
-                    <div class="col-md-3 mb-3"><div class="p-3 text-white" style="background:#B45309;border-radius:12px;"><div class="h4 mb-0">R @owedToDrivers.ToString("N0")</div><small>Still to pay drivers</small></div></div>
-                    <div class="col-md-3 mb-3"><div class="p-3 text-white" style="background:#3D6F8F;border-radius:12px;"><div class="h4 mb-0">R @net.ToString("N0")</div><small>Left after driver pay</small></div></div>
+                    <div class="col-6 col-md-3 mb-3"><div class="p-3" style="background:#EBE3D4;border-radius:12px;border:1px solid #C4B7A2;"><div class="h4 mb-0" style="color:#1A140E;font-weight:800;">R @monthRevenue.ToString("N0")</div><div style="color:#1A140E;font-weight:700;font-size:13px;">This month revenue</div></div></div>
+                    <div class="col-6 col-md-3 mb-3"><div class="p-3" style="background:#EBE3D4;border-radius:12px;border:1px solid #C4B7A2;"><div class="h4 mb-0" style="color:#1A140E;font-weight:800;">R @monthProfit.ToString("N0")</div><div style="color:#1A140E;font-weight:700;font-size:13px;">This month profit</div></div></div>
+                    <div class="col-6 col-md-3 mb-3"><div class="p-3" style="background:#EBE3D4;border-radius:12px;border:1px solid #C4B7A2;"><div class="h4 mb-0" style="color:#1A140E;font-weight:800;">R @grossProfit.ToString("N0")</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Gross profit so far</div></div></div>
+                    <div class="col-6 col-md-3 mb-3"><div class="p-3" style="background:#EBE3D4;border-radius:12px;border:1px solid #C4B7A2;"><div class="h4 mb-0" style="color:#1A140E;font-weight:800;">@margin%</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Profit margin</div></div></div>
+                    <div class="col-6 col-md-3 mb-3"><div class="p-3" style="background:#EBE3D4;border-radius:12px;border:1px solid #C4B7A2;"><div class="h4 mb-0" style="color:#1A140E;font-weight:800;">R @paidToDrivers.ToString("N0")</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Spent on drivers</div></div></div>
+                    <div class="col-6 col-md-3 mb-3"><div class="p-3" style="background:#EBE3D4;border-radius:12px;border:1px solid #C4B7A2;"><div class="h4 mb-0" style="color:#1A140E;font-weight:800;">R @monthDriverSpend.ToString("N0")</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Driver spend this month</div></div></div>
+                    <div class="col-6 col-md-3 mb-3"><div class="p-3" style="background:#EBE3D4;border-radius:12px;border:1px solid #C4B7A2;"><div class="h4 mb-0" style="color:#1A140E;font-weight:800;">@collectionRate%</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Collected from companies</div></div></div>
+                    <div class="col-6 col-md-3 mb-3"><div class="p-3" style="background:#EBE3D4;border-radius:12px;border:1px solid #C4B7A2;"><div class="h4 mb-0" style="color:#1A140E;font-weight:800;">@health / 100</div><div style="color:#1A140E;font-weight:700;font-size:13px;">Cash health score</div></div></div>
                 </div>
+                <p class="mb-4" style="color:#1A140E;font-size:14px;">
+                    Companies on the books: <strong>@companyCount</strong>.
+                    Average paid job: <strong>R @avgTicket.ToString("N0")</strong>.
+                    Credit still out: <strong>R @customersOwe.ToString("N0")</strong>.
+                    Cash already in, after drivers paid: <strong>R @grossProfit.ToString("N0")</strong>.
+                    If every open driver payout is settled, <strong>R @net.ToString("N0")</strong> is left.
+                </p>
                 <div class="row">
                     <div class="col-lg-7 mb-4">
-                        <h6 class="font-weight-bold">Pipeline</h6>
+                        <h6 class="font-weight-bold" style="color:#1A140E;">Pipeline</h6>
                         <canvas id="statusChart" height="130"></canvas>
                     </div>
                     <div class="col-lg-5 mb-4">
-                        <h6 class="font-weight-bold">Money</h6>
+                        <h6 class="font-weight-bold" style="color:#1A140E;">Money</h6>
                         <canvas id="moneyChart" height="130"></canvas>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <h6 class="font-weight-bold">Driver money</h6>
+                        <h6 class="font-weight-bold" style="color:#1A140E;">Driver money</h6>
                         <table class="table table-sm table-bordered">
-                            <thead style="background:#EBE3D4;"><tr><th>Driver</th><th>Jobs</th><th>Still to pay</th><th>Already paid</th></tr></thead>
+                            <thead style="background:#EBE3D4;color:#1A140E;"><tr><th>Driver</th><th>Jobs</th><th>Still to pay</th><th>Already paid</th></tr></thead>
                             <tbody>
                                 @foreach (var row in driverRows)
                                 {
@@ -373,16 +508,16 @@
                                 }
                                 @if (!driverRows.Any())
                                 {
-                                    <tr><td colspan="4" class="text-muted">No drivers assigned yet.</td></tr>
+                                    <tr><td colspan="4">No drivers assigned yet.</td></tr>
                                 }
                             </tbody>
                         </table>
-                        <p class="small text-muted mb-0">Already paid out to drivers: R @paidToDrivers.ToString("N0")</p>
+                        <p class="mb-0" style="color:#1A140E;font-size:13px;font-weight:600;">Already paid out to drivers: R @paidToDrivers.ToString("N0")</p>
                     </div>
                     <div class="col-md-6">
-                        <h6 class="font-weight-bold">Customer money</h6>
+                        <h6 class="font-weight-bold" style="color:#1A140E;">Company money</h6>
                         <table class="table table-sm table-bordered">
-                            <thead style="background:#EBE3D4;"><tr><th>Customer</th><th>Bookings</th><th>Still owes</th><th>Already paid</th></tr></thead>
+                            <thead style="background:#EBE3D4;color:#1A140E;"><tr><th>Company</th><th>Bookings</th><th>Still owes</th><th>Already paid</th></tr></thead>
                             <tbody>
                                 @foreach (var row in customerRows)
                                 {
@@ -390,11 +525,51 @@
                                 }
                                 @if (!customerRows.Any())
                                 {
-                                    <tr><td colspan="4" class="text-muted">No customer bookings yet.</td></tr>
+                                    <tr><td colspan="4">No customer bookings yet.</td></tr>
                                 }
                             </tbody>
                         </table>
-                        <p class="small text-muted mb-0">Unassigned open jobs: @unassignedJobs. Waiting on driver payout: @paidJobs. Closed jobs: @completedJobs of @totalJobs. Rejection rate: @rejectRate%.</p>
+                        <p class="mb-0" style="color:#1A140E;font-size:13px;font-weight:600;">Unassigned open jobs: @unassignedJobs. Waiting on driver payout: @paidJobs. Closed jobs: @completedJobs of @totalJobs. Rejection rate: @rejectRate%.</p>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6 class="font-weight-bold" style="color:#1A140E;">Insurance and coverage</h6>
+                        <p class="mb-3" style="color:#1A140E;font-size:13px;">Display records only. The real cover sits with the insurer. COID is mandatory for every employer in South Africa.</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="p-3" style="background:#EBE3D4;border-radius:12px;border:1px solid #C4B7A2;">
+                                    <div style="color:#1A140E;font-weight:800;font-size:15px;">Driver protection — COID</div>
+                                    <div style="color:#1A140E;font-size:13px;">Santam · Policy KL-COID-2026-014</div>
+                                    <div style="color:#1A140E;font-size:13px;">Medical costs, lost wages, and death benefits if a driver is injured or killed on the job.</div>
+                                    <div style="color:#1A140E;font-size:13px;font-weight:700;">Expires 31 March 2027</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="p-3" style="background:#EBE3D4;border-radius:12px;border:1px solid #C4B7A2;">
+                                    <div style="color:#1A140E;font-weight:800;font-size:15px;">Goods in transit</div>
+                                    <div style="color:#1A140E;font-size:13px;">Hollard · Policy KL-GIT-2026-031</div>
+                                    <div style="color:#1A140E;font-size:13px;">Cargo damage or loss while in the truck, up to R500,000 per load.</div>
+                                    <div style="color:#1A140E;font-size:13px;font-weight:700;">Expires 30 June 2027</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="p-3" style="background:#EBE3D4;border-radius:12px;border:1px solid #C4B7A2;">
+                                    <div style="color:#1A140E;font-weight:800;font-size:15px;">Public liability</div>
+                                    <div style="color:#1A140E;font-size:13px;">Old Mutual · Policy KL-PL-2026-007</div>
+                                    <div style="color:#1A140E;font-size:13px;">Third-party injury or property damage caused by a driver, up to R2 million per claim.</div>
+                                    <div style="color:#1A140E;font-size:13px;font-weight:700;">Expires 31 December 2026</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="p-3" style="background:#EBE3D4;border-radius:12px;border:1px solid #C4B7A2;">
+                                    <div style="color:#1A140E;font-weight:800;font-size:15px;">Vehicle fleet</div>
+                                    <div style="color:#1A140E;font-size:13px;">Discovery Insure · Policy KL-FLT-2026-022</div>
+                                    <div style="color:#1A140E;font-size:13px;">All registered vehicles. Accident, theft, and fire.</div>
+                                    <div style="color:#1A140E;font-size:13px;font-weight:700;">Expires 30 September 2027</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -416,8 +591,8 @@
             new Chart(document.getElementById('moneyChart'), {
                 type: 'doughnut',
                 data: {
-                    labels: ['Received', 'Customers owe', 'Still to pay drivers', 'Paid to drivers'],
-                    datasets: [{ data: [@earned.ToString(System.Globalization.CultureInfo.InvariantCulture), @customersOwe.ToString(System.Globalization.CultureInfo.InvariantCulture), @owedToDrivers.ToString(System.Globalization.CultureInfo.InvariantCulture), @paidToDrivers.ToString(System.Globalization.CultureInfo.InvariantCulture)], backgroundColor: ['#166534', '#9B2C2C', '#B45309', '#3D6F8F'] }]
+                    labels: ['Revenue', 'Customers owe', 'Still to pay drivers', 'Spent on drivers', 'This month profit'],
+                    datasets: [{ data: [@earned.ToString(System.Globalization.CultureInfo.InvariantCulture), @customersOwe.ToString(System.Globalization.CultureInfo.InvariantCulture), @owedToDrivers.ToString(System.Globalization.CultureInfo.InvariantCulture), @paidToDrivers.ToString(System.Globalization.CultureInfo.InvariantCulture), @monthProfit.ToString(System.Globalization.CultureInfo.InvariantCulture)], backgroundColor: ['#166534', '#9B2C2C', '#B45309', '#3D6F8F', '#C47B2D'] }]
                 }
             });
         </script>
@@ -660,6 +835,40 @@
         window.print();
         document.body.innerHTML = originalContents;
         location.reload();
+    }
+    function openPickupCamera(id) {
+        var video = document.getElementById('pcam' + id);
+        video.style.display = 'block';
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            document.getElementById('pfile' + id).click();
+            return;
+        }
+        navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
+            video.srcObject = stream;
+        }).catch(function () {
+            document.getElementById('pfile' + id).click();
+        });
+    }
+    function snapPickupPhoto(id) {
+        var video = document.getElementById('pcam' + id);
+        var img = document.getElementById('pshot' + id);
+        var fileInput = document.getElementById('pfile' + id);
+        if (!video.srcObject) {
+            fileInput.click();
+            return;
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        img.src = canvas.toDataURL('image/jpeg');
+        img.style.display = 'block';
+        canvas.toBlob(function (blob) {
+            var file = new File([blob], 'pickup.jpg', { type: 'image/jpeg' });
+            var data = new DataTransfer();
+            data.items.add(file);
+            fileInput.files = data.files;
+        }, 'image/jpeg');
     }
     function openDeliveryCamera(id) {
         var video = document.getElementById('cam' + id);

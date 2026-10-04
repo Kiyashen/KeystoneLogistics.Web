@@ -6,7 +6,6 @@ using System.Net.Mail;
 using System.Text.RegularExpressions;
 using System.Web.Mvc;
 using KeystoneLogistics.Models;
-
 namespace KeystoneLogistics.Controllers
 {
     public class PaymentController : Controller
@@ -18,11 +17,8 @@ namespace KeystoneLogistics.Controllers
         private const decimal MINIMUM_AMOUNT = 750.00m;
         private const decimal DEFAULT_WEIGHT_KG = 800m;
         private const decimal ROAD_FACTOR = 1.35m;
-        private const decimal DRIVER_BASE = 400.00m;
-        private const decimal DRIVER_RATE_PER_KM = 8.00m;
-        private const decimal DRIVER_MINIMUM = 500.00m;
+        private const decimal DRIVER_FIXED_PAY = 1800.00m;
         private const string AreaError = "We only accommodate deliveries between Durban and Pietermaritzburg and the surrounding areas.";
-
         private void SendEmail(string toEmail, string subject, string body)
         {
             try
@@ -47,21 +43,25 @@ namespace KeystoneLogistics.Controllers
             {
             }
         }
-
+        private decimal RecordedWeight(Load load)
+        {
+            var match = Regex.Match(load?.CargoDescription ?? "", @"WT:(\d+(?:\.\d+)?)");
+            if (match.Success &&
+                decimal.TryParse(match.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal kg) &&
+                kg > 0)
+                return kg;
+            return DEFAULT_WEIGHT_KG;
+        }
         private decimal CalculateDeliveryFee(decimal distanceKm, decimal weightKg)
         {
             decimal total = BASE_FEE + (distanceKm * RATE_PER_KM) + (weightKg * RATE_PER_KG);
             if (total < MINIMUM_AMOUNT) total = MINIMUM_AMOUNT;
             return Math.Round(total, 2);
         }
-
-        private decimal CalculateDriverPayout(decimal distanceKm)
+        private decimal CalculateDriverPayout()
         {
-            decimal total = DRIVER_BASE + (distanceKm * DRIVER_RATE_PER_KM);
-            if (total < DRIVER_MINIMUM) total = DRIVER_MINIMUM;
-            return Math.Round(total, 2);
+            return DRIVER_FIXED_PAY;
         }
-
         private bool TryResolve(Load load, out decimal distanceKm, out string error)
         {
             distanceKm = 0;
@@ -91,12 +91,10 @@ namespace KeystoneLogistics.Controllers
             if (distanceKm < 1m) distanceKm = 1m;
             return true;
         }
-
         private bool InServiceArea(double lat, double lng)
         {
             return lat <= -29.35 && lat >= -30.20 && lng >= 29.95 && lng <= 31.25;
         }
-
         private bool TryLocate(string text, out double lat, out double lng)
         {
             lat = 0;
@@ -144,7 +142,6 @@ namespace KeystoneLogistics.Controllers
             }
             return false;
         }
-
         private double HaversineKm(double lat1, double lng1, double lat2, double lng2)
         {
             const double R = 6371.0;
@@ -155,12 +152,10 @@ namespace KeystoneLogistics.Controllers
                        Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
             return R * (2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a)));
         }
-
         private double ToRad(double deg)
         {
             return deg * Math.PI / 180.0;
         }
-
         private void SendPaymentReceivedEmail(Load load, decimal amount, decimal distanceKm)
         {
             string subject = $"Payment Received - {load.TrackingNumber}";
@@ -186,7 +181,6 @@ namespace KeystoneLogistics.Controllers
             </div>";
             SendEmail("keyram.smma.18@gmail.com", subject, body);
         }
-
         private void SendTaxInvoiceEmail(Load load, decimal amount, decimal distanceKm)
         {
             var customer = db.Customers.Find(load.CustomerId);
@@ -214,10 +208,8 @@ namespace KeystoneLogistics.Controllers
             SendEmail("keyram.smma.18@gmail.com", subject, body);
             if (!string.IsNullOrWhiteSpace(customerEmail)) SendEmail(customerEmail, subject, body);
         }
-
-        private void SendDriverPayoutEmail(Load load, decimal amount, decimal distanceKm)
+        private void SendDriverPayoutEmail(Load load, decimal amount)
         {
-            decimal distanceCharge = Math.Round(distanceKm * DRIVER_RATE_PER_KM, 2);
             string driverName = "Driver";
             if (load.DriverId.HasValue)
             {
@@ -233,14 +225,13 @@ namespace KeystoneLogistics.Controllers
                     <p style='margin: 5px 0 0; font-size: 12px; color: #94a3b8;'>Driver payout confirmation</p>
                 </div>
                 <div style='padding: 20px; background-color: #ffffff; color: #334155;'>
-                    <h3 style='color: #2F6F5E; margin-top: 0;'>Payout paid to {driverName}</h3>
-                    <p>This amount is based on the completed delivery distance, not a flat fee.</p>
+                    <h3 style='color: #2F6F5E; margin-top: 0;'>Fixed payout paid to {driverName}</h3>
+                    <p>Every driver is paid the same company rate for a completed job. Distance is not used.</p>
                     <table style='width: 100%; border-collapse: collapse; margin-top: 15px;'>
                         <tr><td style='border: 1px solid #cbd5e1; padding: 8px;'><strong>Tracking Number</strong></td><td style='border: 1px solid #cbd5e1; padding: 8px;'>{load.TrackingNumber}</td></tr>
                         <tr><td style='border: 1px solid #cbd5e1; padding: 8px;'><strong>Driver</strong></td><td style='border: 1px solid #cbd5e1; padding: 8px;'>{driverName}</td></tr>
                         <tr><td style='border: 1px solid #cbd5e1; padding: 8px;'><strong>Route</strong></td><td style='border: 1px solid #cbd5e1; padding: 8px;'>{load.PickupLocation} to {load.DropoffLocation}</td></tr>
-                        <tr><td style='border: 1px solid #cbd5e1; padding: 8px;'><strong>Driver base fee</strong></td><td style='border: 1px solid #cbd5e1; padding: 8px;'>R {DRIVER_BASE:N2}</td></tr>
-                        <tr><td style='border: 1px solid #cbd5e1; padding: 8px;'><strong>Distance</strong></td><td style='border: 1px solid #cbd5e1; padding: 8px;'>{distanceKm:N1} km × R {DRIVER_RATE_PER_KM:N2} = R {distanceCharge:N2}</td></tr>
+                        <tr><td style='border: 1px solid #cbd5e1; padding: 8px;'><strong>Pay type</strong></td><td style='border: 1px solid #cbd5e1; padding: 8px;'>Fixed rate, same for every driver</td></tr>
                         <tr><td style='border: 1px solid #cbd5e1; padding: 8px;'><strong>Total paid</strong></td><td style='border: 1px solid #cbd5e1; padding: 8px; color: #2F6F5E; font-weight: bold;'>R {amount:N2}</td></tr>
                         <tr><td style='border: 1px solid #cbd5e1; padding: 8px;'><strong>Status</strong></td><td style='border: 1px solid #cbd5e1; padding: 8px;'>Completed</td></tr>
                     </table>
@@ -248,7 +239,6 @@ namespace KeystoneLogistics.Controllers
             </div>";
             SendEmail("keyram.smma.18@gmail.com", subject, body);
         }
-
         public ActionResult Checkout(int? id)
         {
             if (id == null) return RedirectToAction("Index", "Loads");
@@ -260,7 +250,7 @@ namespace KeystoneLogistics.Controllers
                 TempData["ErrorMessage"] = error;
                 return RedirectToAction("Index", "Loads");
             }
-            decimal weight = DEFAULT_WEIGHT_KG;
+            decimal weight = RecordedWeight(load);
             decimal amount = CalculateDeliveryFee(distance, weight);
             ViewBag.Load = load;
             ViewBag.Amount = amount;
@@ -278,7 +268,6 @@ namespace KeystoneLogistics.Controllers
             ViewBag.NotifyUrl = Url.Action("Notify", "Payment", null, Request.Url.Scheme);
             return View(load);
         }
-
         public ActionResult DriverCheckout(int? id)
         {
             if (id == null) return RedirectToAction("Index", "Loads");
@@ -290,18 +279,13 @@ namespace KeystoneLogistics.Controllers
                 TempData["ErrorMessage"] = "This shipment is not ready for driver payout.";
                 return RedirectToAction("Index", "Loads");
             }
-            if (!TryResolve(load, out decimal distance, out string error))
-            {
-                TempData["ErrorMessage"] = error;
-                return RedirectToAction("Index", "Loads");
-            }
-            decimal distanceCharge = Math.Round(distance * DRIVER_RATE_PER_KM, 2);
+            decimal payout = CalculateDriverPayout();
             ViewBag.Load = load;
-            ViewBag.Amount = CalculateDriverPayout(distance);
-            ViewBag.DriverBase = DRIVER_BASE;
-            ViewBag.DriverRate = DRIVER_RATE_PER_KM;
-            ViewBag.DistanceKm = distance;
-            ViewBag.DistanceCharge = distanceCharge;
+            ViewBag.Amount = payout;
+            ViewBag.DriverBase = payout;
+            ViewBag.DriverRate = 0m;
+            ViewBag.DistanceKm = 0m;
+            ViewBag.DistanceCharge = 0m;
             ViewBag.ItemName = $"Driver Payout - {load.TrackingNumber}";
             ViewBag.PayFastUrl = "https://sandbox.payfast.co.za/eng/process";
             ViewBag.MerchantId = "10000100";
@@ -311,7 +295,6 @@ namespace KeystoneLogistics.Controllers
             ViewBag.NotifyUrl = Url.Action("Notify", "Payment", null, Request.Url.Scheme);
             return View("DriverCheckout", load);
         }
-
         public ActionResult Invoice(int id)
         {
             var load = db.Loads.Find(id);
@@ -319,20 +302,19 @@ namespace KeystoneLogistics.Controllers
             var customer = db.Customers.Find(load.CustomerId);
             TryResolve(load, out decimal distance, out _);
             if (distance <= 0) distance = 1;
-            ViewBag.Amount = CalculateDeliveryFee(distance, DEFAULT_WEIGHT_KG);
+            ViewBag.Amount = CalculateDeliveryFee(distance, RecordedWeight(load));
             ViewBag.DistanceKm = distance;
             ViewBag.InvoiceNumber = "INV-" + load.TrackingNumber;
             ViewBag.CustomerName = customer != null ? customer.CompanyName : "Customer";
             ViewBag.CustomerEmail = customer != null ? customer.Email : "";
             return View(load);
         }
-
         public ActionResult Success(int id)
         {
             var load = db.Loads.Find(id);
             if (load != null && TryResolve(load, out decimal distance, out _))
             {
-                decimal amount = CalculateDeliveryFee(distance, DEFAULT_WEIGHT_KG);
+                decimal amount = CalculateDeliveryFee(distance, RecordedWeight(load));
                 load.Status = "Paid / Processing";
                 db.SaveChanges();
                 SendPaymentReceivedEmail(load, amount, distance);
@@ -341,30 +323,28 @@ namespace KeystoneLogistics.Controllers
             }
             return RedirectToAction("Invoice", new { id = id });
         }
-
         public ActionResult DriverSuccess(int id)
         {
             var load = db.Loads.Find(id);
-            if (load != null && TryResolve(load, out decimal distance, out _))
+            if (load != null)
             {
-                decimal payout = CalculateDriverPayout(distance);
+                decimal payout = CalculateDriverPayout();
                 load.Status = "Completed";
                 load.WorkStatus = "Completed";
                 db.SaveChanges();
                 db.AuditLogs.Add(new AuditLog
                 {
                     LoadId = id,
-                    Action = "Admin paid the Driver via PayFast - Job Completed",
+                    Action = "Admin paid the driver the fixed rate of R1800",
                     PerformedBy = "Admin",
                     Timestamp = DateTime.Now
                 });
                 db.SaveChanges();
-                SendDriverPayoutEmail(load, payout, distance);
-                TempData["SuccessMessage"] = $"Driver has been paid R {payout:N2} for shipment #{load.TrackingNumber} ({distance:N1} km).";
+                SendDriverPayoutEmail(load, payout);
+                TempData["SuccessMessage"] = $"Driver has been paid the fixed rate of R {payout:N2} for shipment #{load.TrackingNumber}.";
             }
             return RedirectToAction("Index", "Loads");
         }
-
         public ActionResult Cancel(int id)
         {
             var load = db.Loads.Find(id);
@@ -372,7 +352,6 @@ namespace KeystoneLogistics.Controllers
                 TempData["ErrorMessage"] = $"Payment for shipment #{load.TrackingNumber} was cancelled.";
             return RedirectToAction("Index", "Loads");
         }
-
         [HttpPost]
         public ActionResult Notify()
         {
@@ -380,11 +359,11 @@ namespace KeystoneLogistics.Controllers
             if (intnData != null && intnData.Count > 0 && int.TryParse(intnData["m_payment_id"], out int loadId))
             {
                 var load = db.Loads.Find(loadId);
-                if (load != null && intnData["payment_status"] == "COMPLETE" && TryResolve(load, out decimal distance, out _))
+                if (load != null && intnData["payment_status"] == "COMPLETE")
                 {
-                    if (load.Status == "Delivered")
+                    if (load.Status == "Delivered" && TryResolve(load, out decimal distance, out _))
                     {
-                        decimal amount = CalculateDeliveryFee(distance, DEFAULT_WEIGHT_KG);
+                        decimal amount = CalculateDeliveryFee(distance, RecordedWeight(load));
                         load.Status = "Paid / Processing";
                         db.SaveChanges();
                         SendPaymentReceivedEmail(load, amount, distance);
@@ -392,17 +371,16 @@ namespace KeystoneLogistics.Controllers
                     }
                     else if (load.Status == "Paid / Processing")
                     {
-                        decimal payout = CalculateDriverPayout(distance);
+                        decimal payout = CalculateDriverPayout();
                         load.Status = "Completed";
                         load.WorkStatus = "Completed";
                         db.SaveChanges();
-                        SendDriverPayoutEmail(load, payout, distance);
+                        SendDriverPayoutEmail(load, payout);
                     }
                 }
             }
             return new HttpStatusCodeResult(HttpStatusCode.OK);
         }
-
         protected override void Dispose(bool disposing)
         {
             if (disposing) db.Dispose();

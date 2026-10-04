@@ -13,7 +13,6 @@ using System.Web;
 using System.Web.Mvc;
 using KeystoneLogistics.Models;
 using KeystoneLogistics.Services;
-
 namespace KeystoneLogistics.Controllers
 {
     public class LoadsController : Controller
@@ -21,7 +20,6 @@ namespace KeystoneLogistics.Controllers
         private KeystoneLogisticsDBEntities db = new KeystoneLogisticsDBEntities();
         private const string AdminEmail = "keyram.smma.18@gmail.com";
         private const string AreaError = "We only accommodate deliveries between Durban and Pietermaritzburg and the surrounding areas.";
-
         private void SendEmail(string toEmail, string subject, string body, string attachmentPath = null)
         {
             try
@@ -56,13 +54,11 @@ namespace KeystoneLogistics.Controllers
                 System.Diagnostics.Debug.WriteLine("Email dispatch error: " + ex.Message);
             }
         }
-
         private string Clip(string text)
         {
             if (string.IsNullOrEmpty(text)) return text;
             return text.Length <= 90 ? text : text.Substring(0, 90);
         }
-
         private string CustomerName(Load load)
         {
             if (load == null || !load.CustomerId.HasValue) return "Customer";
@@ -70,21 +66,18 @@ namespace KeystoneLogistics.Controllers
             if (c == null) return "Customer";
             return string.IsNullOrWhiteSpace(c.CompanyName) ? (c.ContactPerson ?? "Customer") : c.CompanyName;
         }
-
         private string CustomerEmail(Load load)
         {
             if (load == null || !load.CustomerId.HasValue) return AdminEmail;
             var c = load.Customer ?? db.Customers.Find(load.CustomerId.Value);
             return c != null && !string.IsNullOrWhiteSpace(c.Email) ? c.Email : AdminEmail;
         }
-
         private string DriverName(Load load)
         {
             if (load == null || !load.DriverId.HasValue) return "Driver";
             var d = load.Driver ?? db.Drivers.Find(load.DriverId.Value);
             return d != null && !string.IsNullOrWhiteSpace(d.FullName) ? d.FullName : "Driver";
         }
-
         private void SaveSafe()
         {
             try { db.SaveChanges(); }
@@ -97,12 +90,77 @@ namespace KeystoneLogistics.Controllers
                 throw new Exception(details, vex);
             }
         }
-
         private bool InServiceArea(double lat, double lng)
         {
             return lat <= -29.35 && lat >= -30.20 && lng >= 29.95 && lng <= 31.25;
         }
-
+        private List<string> SavedPlaces()
+        {
+            int userId = Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int id) ? id : 0;
+            var mine = db.Loads.Where(l => userId == 0 || l.CustomerId == userId);
+            return mine.Select(l => l.PickupLocation)
+                .Concat(mine.Select(l => l.DropoffLocation))
+                .Where(s => s != null && s != "")
+                .Distinct()
+                .OrderBy(s => s)
+                .Take(20)
+                .ToList();
+        }
+        private string ShortName(string displayName)
+        {
+            if (string.IsNullOrWhiteSpace(displayName)) return null;
+            var parts = displayName.Split(',');
+            string shortName = parts.Length > 1 ? parts[0].Trim() + ", " + parts[1].Trim() : parts[0].Trim();
+            return shortName.Length > 80 ? shortName.Substring(0, 80) : shortName;
+        }
+        private string SuggestPlace(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return null;
+            string[] tries = { text + ", KwaZulu-Natal, South Africa", text + ", South Africa", text };
+            foreach (string query in tries)
+            {
+                try
+                {
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                    string url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=za&q=" +
+                                 Uri.EscapeDataString(query);
+                    using (var client = new WebClient())
+                    {
+                        client.Headers.Add("User-Agent", "KeystoneLogistics/1.0 (student project)");
+                        string json = client.DownloadString(url);
+                        var nameMatch = Regex.Match(json, "\"display_name\"\\s*:\\s*\"([^\"]+)\"");
+                        if (!nameMatch.Success) continue;
+                        return ShortName(nameMatch.Groups[1].Value);
+                    }
+                }
+                catch { }
+            }
+            return null;
+        }
+        private bool NeedsSuggestion(string typed, out string town)
+        {
+            town = null;
+            string raw = (typed ?? "").Trim();
+            if (raw.Length == 0 || raw.Contains(",") || Regex.IsMatch(raw, @"\d")) return false;
+            string lower = raw.ToLowerInvariant();
+            string[] towns = { "pietermaritzburg", "pmb", "durban", "pinetown", "umhlanga", "chatsworth", "westville", "hillcrest", "ballito", "howick", "amanzimtoti", "phoenix", "verulam" };
+            string[] ok = { "hub", "terminal", "depot", "warehouse", "centre", "center", "yard", "port", "distribution", "road", "street", "rd", "st", "blvd", "avenue", "ave", "drive", "industrial", "container", "central", "south", "north", "east", "west", "bank", "ridge" };
+            foreach (string t in towns)
+            {
+                if (!lower.Contains(t)) continue;
+                town = t == "pmb" ? "Pietermaritzburg" : char.ToUpper(t[0]) + t.Substring(1);
+                string rest = Regex.Replace(lower, t, " ");
+                rest = Regex.Replace(rest, @"[^a-z]", " ");
+                foreach (string word in rest.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (word.Length <= 1) continue;
+                    bool allowed = false;
+                    foreach (string a in ok) if (word == a) allowed = true;
+                    if (!allowed) return true;
+                }
+            }
+            return false;
+        }
         private bool TryLocate(string text, out double lat, out double lng)
         {
             lat = 0;
@@ -150,18 +208,45 @@ namespace KeystoneLogistics.Controllers
             }
             return false;
         }
-
         private bool RouteAllowed(string pickup, string dropoff, out string error)
         {
             error = null;
+            string from = (pickup ?? "").Trim();
+            string to = (dropoff ?? "").Trim();
+            if (string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
+            {
+                error = "Pickup and drop-off cannot be the same place.";
+                return false;
+            }
+            if (NeedsSuggestion(from, out string pickupTown))
+            {
+                error = "Could not match that pickup. Did you mean: " + pickupTown + "? Type that and submit again.";
+                return false;
+            }
+            if (NeedsSuggestion(to, out string dropoffTown))
+            {
+                error = "Could not match that drop-off. Did you mean: " + dropoffTown + "? Type that and submit again.";
+                return false;
+            }
             if (!TryLocate(pickup, out double pLat, out double pLng))
             {
-                error = "Could not find that pickup on the map. Type the address again.";
+                string hint = SuggestPlace(pickup);
+                error = string.IsNullOrEmpty(hint)
+                    ? "Could not find that pickup on the map. Type the address again."
+                    : "Could not match that pickup. Did you mean: " + hint + "?";
                 return false;
             }
             if (!TryLocate(dropoff, out double dLat, out double dLng))
             {
-                error = "Could not find that dropoff on the map. Type the address again.";
+                string hint = SuggestPlace(dropoff);
+                error = string.IsNullOrEmpty(hint)
+                    ? "Could not find that dropoff on the map. Type the address again."
+                    : "Could not match that drop-off. Did you mean: " + hint + "?";
+                return false;
+            }
+            if (Math.Abs(pLat - dLat) < 0.01 && Math.Abs(pLng - dLng) < 0.01)
+            {
+                error = "Pickup and drop-off cannot be the same place.";
                 return false;
             }
             if (!InServiceArea(pLat, pLng) || !InServiceArea(dLat, dLng))
@@ -171,7 +256,6 @@ namespace KeystoneLogistics.Controllers
             }
             return true;
         }
-
         private int JobsCompletedToday(int? driverId)
         {
             if (!driverId.HasValue) return 0;
@@ -183,7 +267,27 @@ namespace KeystoneLogistics.Controllers
                 l.DeliveredDate.Value >= start &&
                 l.DeliveredDate.Value < end);
         }
-
+        private double RoadKm(double lat1, double lng1, double lat2, double lng2)
+        {
+            const double R = 6371;
+            double dLat = (lat2 - lat1) * Math.PI / 180.0;
+            double dLng = (lng2 - lng1) * Math.PI / 180.0;
+            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+                + Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0)
+                * Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
+            return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a)) * 1.35;
+        }
+        private DateTime EstimateArrival(Load load, DateTime departed)
+        {
+            if (TryLocate(load.PickupLocation, out double pLat, out double pLng) &&
+                TryLocate(load.DropoffLocation, out double dLat, out double dLng))
+            {
+                double km = RoadKm(pLat, pLng, dLat, dLng);
+                double minutes = Math.Max(45, Math.Round(km / 45.0 * 60) + 15);
+                return departed.AddMinutes(minutes);
+            }
+            return departed.AddHours(3);
+        }
         private string SaveDeliveryPhoto(HttpPostedFileBase podPhoto, string trackingNumber)
         {
             if (podPhoto == null || podPhoto.ContentLength == 0) return null;
@@ -196,13 +300,16 @@ namespace KeystoneLogistics.Controllers
             podPhoto.SaveAs(fullPath);
             return fullPath;
         }
-
+        private void StampWeight(Load load, decimal kg)
+        {
+            string cargo = Regex.Replace(load.CargoDescription ?? "", @"\s*\|\s*WT:\d+(\.\d+)?", "");
+            load.CargoDescription = cargo.Trim() + " | WT:" + kg.ToString("0.0", CultureInfo.InvariantCulture);
+        }
         public ActionResult Index()
         {
             if (Session["UserRole"] == null) return RedirectToAction("Login", "Account");
             string userRole = Session["UserRole"]?.ToString();
             int userId = Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int id) ? id : 0;
-
             var testLoad = db.Loads.Include(l => l.Customer)
                 .Where(l => l.Status == "Delivered" && l.DeliveredDate.HasValue)
                 .OrderByDescending(l => l.DeliveredDate)
@@ -229,7 +336,6 @@ namespace KeystoneLogistics.Controllers
                 SaveSafe();
                 TempData["ErrorMessage"] = "Overdue demand emailed for " + testLoad.TrackingNumber + ".";
             }
-
             var loads = db.Loads.Include(l => l.Customer).Include(l => l.Driver).Include(l => l.Vehicle).AsQueryable();
             if (userRole == "Customer") loads = loads.Where(l => l.CustomerId == userId);
             else if (userRole == "Driver") loads = loads.Where(l => l.DriverId == userId || l.WorkStatus == "Accepted");
@@ -238,7 +344,6 @@ namespace KeystoneLogistics.Controllers
             ViewBag.AuditLogs = db.AuditLogs.Include(a => a.Load).OrderByDescending(a => a.Timestamp).ToList();
             return View(loads.ToList());
         }
-
         public ActionResult Details(int id)
         {
             var load = db.Loads.Include(l => l.Vehicle).Include(l => l.Driver).FirstOrDefault(l => l.LoadId == id);
@@ -246,20 +351,20 @@ namespace KeystoneLogistics.Controllers
             ViewBag.PODs = db.PODDocuments.Where(p => p.LoadId == id).ToList();
             return View(load);
         }
-
         public ActionResult Create()
         {
             if (Session["UserRole"]?.ToString() != "Customer") return RedirectToAction("Index");
             try { ViewBag.CustomerList = new SelectList(db.Customers.ToList(), "CustomerId", "CompanyName"); }
             catch { ViewBag.CustomerList = new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"); }
+            ViewBag.SavedPlaces = SavedPlaces();
             return View();
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Create([Bind(Include = "PickupLocation,DropoffLocation,CargoDescription")] Load load)
         {
             if (Session["UserRole"]?.ToString() != "Customer") return RedirectToAction("Index");
+            ViewBag.SavedPlaces = SavedPlaces();
             if (!RouteAllowed(load.PickupLocation, load.DropoffLocation, out string areaError))
             {
                 TempData["ErrorMessage"] = areaError;
@@ -269,6 +374,11 @@ namespace KeystoneLogistics.Controllers
             }
             if (ModelState.IsValid)
             {
+                bool fragile = string.Equals(Request.Form["IsFragile"], "true", StringComparison.OrdinalIgnoreCase);
+                string cargo = (load.CargoDescription ?? "").Trim();
+                if (fragile && !cargo.StartsWith("FRAGILE:", StringComparison.OrdinalIgnoreCase))
+                    cargo = "FRAGILE: " + cargo;
+                load.CargoDescription = cargo;
                 int count = db.Loads.Count() + 1;
                 load.TrackingNumber = $"KL-2026-{count:D3}";
                 if (Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int sessionUserId))
@@ -287,13 +397,14 @@ namespace KeystoneLogistics.Controllers
                 db.AuditLogs.Add(new AuditLog
                 {
                     LoadId = load.LoadId,
-                    Action = Clip("Created " + load.TrackingNumber + " for " + CustomerName(load)),
+                    Action = Clip((fragile ? "FRAGILE " : "Created ") + load.TrackingNumber + " for " + CustomerName(load)),
                     PerformedBy = "Customer",
                     Timestamp = DateTime.Now
                 });
                 SaveSafe();
-                SendEmail(AdminEmail, "New Shipment Created: " + load.TrackingNumber,
-                    "<h2>KEYSTONE LOGISTICS</h2><p>Customer: " + CustomerName(load) + "</p><p>Tracking: " + load.TrackingNumber + "</p><p>Pickup: " + load.PickupLocation + "</p><p>Dropoff: " + load.DropoffLocation + "</p>");
+                SendEmail(AdminEmail, (fragile ? "FRAGILE shipment: " : "New Shipment Created: ") + load.TrackingNumber,
+                    "<h2>KEYSTONE LOGISTICS</h2><p>Customer: " + CustomerName(load) + "</p><p>Tracking: " + load.TrackingNumber + "</p><p>Pickup: " + load.PickupLocation + "</p><p>Dropoff: " + load.DropoffLocation + "</p><p>Cargo: " + load.CargoDescription + "</p>"
+                    + (fragile ? "<p style='color:#9B2C2C;'><strong>FRAGILE. Handle with care.</strong></p>" : ""));
                 TempData["SuccessMessage"] = "Work request created successfully! Tracking Number: " + load.TrackingNumber;
                 return RedirectToAction("Index");
             }
@@ -301,7 +412,6 @@ namespace KeystoneLogistics.Controllers
             catch { ViewBag.CustomerList = new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"); }
             return View(load);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult AcceptRequest(int id, int driverId, string routeSafety, int? vehicleId)
@@ -327,6 +437,7 @@ namespace KeystoneLogistics.Controllers
             if (string.IsNullOrEmpty(load.CollectionPasscode))
                 load.CollectionPasscode = new Random().Next(1000, 9999).ToString();
             string cust = CustomerName(load);
+            bool fragile = (load.CargoDescription ?? "").StartsWith("FRAGILE:", StringComparison.OrdinalIgnoreCase);
             db.AuditLogs.Add(new AuditLog
             {
                 LoadId = id,
@@ -342,21 +453,21 @@ namespace KeystoneLogistics.Controllers
                 TempData["ErrorMessage"] = "Could not assign driver. " + ex.Message;
                 return RedirectToAction("Index");
             }
+            string fragileLine = fragile ? "<p style='color:#9B2C2C;'><strong>FRAGILE. Handle with care.</strong></p>" : "";
             if (driverBusy)
             {
                 SendEmail(AdminEmail, "Queued " + load.TrackingNumber,
-                    "<p>Driver " + driver.FullName + " is mid-route.</p><p>Customer: " + cust + "</p><p>Next pickup: " + load.PickupLocation + "</p><p>PIN: " + load.CollectionPasscode + "</p>");
+                    "<p>Driver " + driver.FullName + " is mid-route.</p><p>Customer: " + cust + "</p><p>Next pickup: " + load.PickupLocation + "</p><p>PIN: " + load.CollectionPasscode + "</p>" + fragileLine);
                 TempData["SuccessMessage"] = driver.FullName + " is on the road. " + load.TrackingNumber + " queued for " + cust + ".";
             }
             else
             {
                 SendEmail(AdminEmail, "Dispatched " + load.TrackingNumber,
-                    "<p>Driver: " + driver.FullName + "</p><p>Customer: " + cust + "</p><p>PIN: " + load.CollectionPasscode + "</p>");
+                    "<p>Driver: " + driver.FullName + "</p><p>Customer: " + cust + "</p><p>PIN: " + load.CollectionPasscode + "</p>" + fragileLine);
                 TempData["SuccessMessage"] = "Accepted. Driver: " + driver.FullName + ". Customer: " + cust + ". PIN: " + load.CollectionPasscode;
             }
             return RedirectToAction("Index");
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult RejectRequest(int id, string rejectionReason)
@@ -393,25 +504,59 @@ namespace KeystoneLogistics.Controllers
             TempData["ErrorMessage"] = "Work Request #" + load.TrackingNumber + " Rejected. Email sent.";
             return RedirectToAction("Index");
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult VerifyCollection(int id, string enteredPasscode)
+        public ActionResult VerifyCollection(int id, string enteredPasscode, decimal actualWeightKg, HttpPostedFileBase pickupPhoto)
         {
             if (Session["UserRole"]?.ToString() != "Driver") return RedirectToAction("Index");
             var load = db.Loads.Include(l => l.Customer).Include(l => l.Driver).FirstOrDefault(l => l.LoadId == id);
             if (load != null)
             {
                 string logAction;
+                if (actualWeightKg <= 0)
+                {
+                    TempData["ErrorMessage"] = "Enter the actual weight in kilograms before verifying pickup.";
+                    return RedirectToAction("Index");
+                }
                 if (load.CollectionPasscode == enteredPasscode)
                 {
                     DateTime departed = DateTime.Now;
+                    DateTime eta = EstimateArrival(load, departed);
+                    decimal weightCharge = Math.Round(actualWeightKg * 1.50m, 2);
                     load.IsCollected = true;
                     load.Status = "En Route";
                     load.CurrentLocation = "In Transit";
                     load.DispatchedDate = departed;
-                    logAction = "DEPART " + departed.ToString("HH:mm") + " " + load.TrackingNumber + " " + DriverName(load) + " > " + CustomerName(load);
-                    TempData["SuccessMessage"] = "PIN verified. Departure " + departed.ToString("HH:mm:ss");
+                    StampWeight(load, actualWeightKg);
+                    string photoPath = SaveDeliveryPhoto(pickupPhoto, load.TrackingNumber + "-pickup");
+                    if (!string.IsNullOrEmpty(photoPath))
+                    {
+                        db.PODDocuments.Add(new PODDocument
+                        {
+                            LoadId = id,
+                            FilePath = "/Content/DeliveryPhotos/" + Path.GetFileName(photoPath),
+                            Notes = "Pickup photo"
+                        });
+                    }
+                    logAction = "DEPART " + departed.ToString("HH:mm") + " WT " + actualWeightKg.ToString("0.0", CultureInfo.InvariantCulture) + "kg " + load.TrackingNumber;
+                    bool fragile = (load.CargoDescription ?? "").IndexOf("fragile", StringComparison.OrdinalIgnoreCase) >= 0;
+                    string body = "<h2>KEYSTONE LOGISTICS</h2>"
+                        + "<p>Hi " + CustomerName(load) + ",</p>"
+                        + "<p>Your package has been collected and is now <strong>on the way</strong>.</p>"
+                        + "<p>Tracking: <strong>" + load.TrackingNumber + "</strong></p>"
+                        + "<p>From: " + load.PickupLocation + "</p>"
+                        + "<p>To: " + load.DropoffLocation + "</p>"
+                        + "<p>Driver: " + DriverName(load) + "</p>"
+                        + "<p>Collected at: " + departed.ToString("HH:mm") + "</p>"
+                        + "<p>Actual weight: <strong>" + actualWeightKg.ToString("N1") + " kg</strong></p>"
+                        + "<p>Weight charge: <strong>R " + weightCharge.ToString("N2") + "</strong> at R1.50 per kg. This is added to the final invoice.</p>"
+                        + "<p><strong>Estimated delivery: " + eta.ToString("HH:mm") + " today.</strong></p>"
+                        + (fragile ? "<p style='color:#9B2C2C;'><strong>FRAGILE. The driver has been told to handle this with care.</strong></p>" : "")
+                        + "<p>This estimate is based on the route distance. Traffic can move it.</p>"
+                        + "<p>You will get a final notice, with the doorstep photo, once it is delivered.</p>";
+                    SendEmail(CustomerEmail(load), "Collected: " + load.TrackingNumber + " is on the way", body, photoPath);
+                    SendEmail(AdminEmail, "Collected: " + load.TrackingNumber + " is on the way", body, photoPath);
+                    TempData["SuccessMessage"] = "PIN verified. " + actualWeightKg.ToString("N1") + " kg emailed. ETA " + eta.ToString("HH:mm") + ".";
                 }
                 else
                 {
@@ -429,7 +574,6 @@ namespace KeystoneLogistics.Controllers
             }
             return RedirectToAction("Index");
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult MarkDelivered(int id, string scannedQRCode, HttpPostedFileBase podPhoto)
@@ -516,7 +660,6 @@ namespace KeystoneLogistics.Controllers
                 : load.TrackingNumber + " delivered for " + cust + ". Payment due " + due.ToString("dd MMM") + ".";
             return RedirectToAction("Index");
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult UploadPOD(int LoadId, HttpPostedFileBase podFile, string notes)
@@ -557,7 +700,93 @@ namespace KeystoneLogistics.Controllers
             }
             return RedirectToAction("Details", new { id = LoadId });
         }
-
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult RoadAlert(int id, string alertType)
+        {
+            if (Session["UserRole"]?.ToString() != "Driver") return RedirectToAction("Index");
+            var allowed = new Dictionary<string, string>
+            {
+                { "traffic", "Heavy traffic" },
+                { "blocked", "Road blocked" },
+                { "construction", "Construction" },
+                { "risk", "High-risk area, avoid" }
+            };
+            if (string.IsNullOrWhiteSpace(alertType) || !allowed.ContainsKey(alertType))
+            {
+                TempData["ErrorMessage"] = "Pick a road update.";
+                return RedirectToAction("Index");
+            }
+            var load = db.Loads.Include(l => l.Driver).FirstOrDefault(l => l.LoadId == id);
+            if (load == null) return RedirectToAction("Index");
+            string who = Session["Username"]?.ToString() ?? DriverName(load);
+            string label = allowed[alertType];
+            string route = (load.PickupLocation ?? "") + " to " + (load.DropoffLocation ?? "");
+            db.AuditLogs.Add(new AuditLog
+            {
+                LoadId = id,
+                Action = Clip("ROAD " + label + " " + load.TrackingNumber),
+                PerformedBy = who,
+                Timestamp = DateTime.Now
+            });
+            SaveSafe();
+            string body = "<h2 style='color:#9B2C2C;'>ROAD UPDATE FOR ALL DRIVERS</h2>"
+                + "<p><strong>" + label + "</strong></p>"
+                + "<p>Driver: " + who + "</p>"
+                + "<p>Job: " + load.TrackingNumber + "</p>"
+                + "<p>Route: " + route + "</p>"
+                + "<p>Time: " + DateTime.Now.ToString("HH:mm") + "</p>"
+                + "<p>This is the job corridor, not a single street pin.</p>";
+            SendEmail(AdminEmail, "ROAD ALERT all drivers: " + label + " " + load.TrackingNumber, body);
+            TempData["SuccessMessage"] = "Sent to all drivers: " + label + " on " + route + ".";
+            return RedirectToAction("Index");
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult CheckIn()
+        {
+            if (Session["UserRole"]?.ToString() != "Driver") return RedirectToAction("Index");
+            int userId = Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int id) ? id : 0;
+            if (userId == 0)
+            {
+                TempData["ErrorMessage"] = "Driver session missing. Log in again.";
+                return RedirectToAction("Index");
+            }
+            var last = db.Loads
+                .Where(l => l.DriverId == userId && l.DeliveredDate.HasValue)
+                .OrderByDescending(l => l.DeliveredDate)
+                .FirstOrDefault();
+            if (last == null)
+            {
+                TempData["ErrorMessage"] = "No completed job to check in against.";
+                return RedirectToAction("Index");
+            }
+            bool already = db.AuditLogs.Any(a => a.LoadId == last.LoadId && a.Action != null && a.Action.StartsWith("RETURN"));
+            if (already)
+            {
+                TempData["ErrorMessage"] = "Already checked in for " + last.TrackingNumber + ".";
+                return RedirectToAction("Index");
+            }
+            DateTime back = DateTime.Now;
+            string who = Session["Username"]?.ToString() ?? DriverName(last);
+            db.AuditLogs.Add(new AuditLog
+            {
+                LoadId = last.LoadId,
+                Action = Clip("RETURN " + back.ToString("HH:mm") + " " + last.TrackingNumber),
+                PerformedBy = who,
+                Timestamp = back
+            });
+            SaveSafe();
+            string body = "<h2 style='color:#2F6F5E;'>DRIVER BACK AT BASE</h2>"
+                + "<p>Driver: " + who + "</p>"
+                + "<p>Job: " + last.TrackingNumber + "</p>"
+                + "<p>Drop-off: " + last.DropoffLocation + "</p>"
+                + "<p>Delivered: " + (last.DeliveredDate.HasValue ? last.DeliveredDate.Value.ToString("HH:mm") : "") + "</p>"
+                + "<p>Returned: " + back.ToString("HH:mm") + "</p>";
+            SendEmail(AdminEmail, "RETURN " + last.TrackingNumber + " " + who, body);
+            TempData["SuccessMessage"] = "Checked in at base at " + back.ToString("HH:mm") + " after " + last.TrackingNumber + ".";
+            return RedirectToAction("Index");
+        }
         protected override void Dispose(bool disposing)
         {
             if (disposing) db.Dispose();
