@@ -237,6 +237,9 @@
       <DependentUpon>KeystoneLogisticsDB.edmx</DependentUpon>
     </Content>
     <Content Include="Content\models\van.glb" />
+    <Content Include="Content\models\boxes.glb" />
+    <Content Include="Content\models\driver.glb" />
+    <Content Include="Content\models\warehouse.glb" />
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
     <Content Include="Scripts\jquery-3.7.0.min.js" />
