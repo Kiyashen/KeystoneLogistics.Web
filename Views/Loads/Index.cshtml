@@ -87,44 +87,6 @@
                 }
             </div>
         }
-        var lastDelivered = loadList
-            .Where(l => l.Status == "Delivered" || l.Status == "Paid / Processing" || l.Status == "Completed")
-            .OrderByDescending(l => l.DeliveredDate)
-            .FirstOrDefault();
-        var returnLog = lastDelivered == null
-            ? null
-            : auditLogs.FirstOrDefault(a => a.LoadId == lastDelivered.LoadId && a.Action != null && a.Action.StartsWith("RETURN"));
-        <div class="card shadow-sm mb-3" style="border-left: 5px solid #2F6F5E;">
-            <div class="card-body py-3 d-flex justify-content-between align-items-center flex-wrap">
-                <div class="mr-3">
-                    <div class="font-weight-bold">Back at base</div>
-                    @if (lastDelivered == null)
-                    {
-                        <div class="small text-muted">Finish a drop-off first. Then tap once when you are back.</div>
-                    }
-                    else if (returnLog == null)
-                    {
-                        <div class="small text-muted">Last drop-off @lastDelivered.TrackingNumber. Tap once when you are back.</div>
-                    }
-                    else
-                    {
-                        <div class="small text-muted">Return logged for @lastDelivered.TrackingNumber at @(returnLog.Timestamp.HasValue ? returnLog.Timestamp.Value.ToString("HH:mm") : "").</div>
-                    }
-                </div>
-                @if (lastDelivered != null && returnLog == null)
-                {
-                    using (Html.BeginForm("CheckIn", "Loads", FormMethod.Post, new { @class = "mb-0" }))
-                    {
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-success">I'm back. Log return</button>
-                    }
-                }
-                else if (returnLog != null)
-                {
-                    <span class="badge badge-success p-2">RETURN @(returnLog.Timestamp.HasValue ? returnLog.Timestamp.Value.ToString("HH:mm") : "")</span>
-                }
-            </div>
-        </div>
         <div class="row">
             @if (!loadList.Any())
             {
@@ -793,13 +755,29 @@
             lastRoute = L.polyline(routePoints, { color: '#2F6F5E', weight: 5 }).addTo(map);
             map.fitBounds(lastRoute.getBounds(), { padding: [40, 40] });
             map.invalidateSize();
-            if (status === 'En Route') {
-                let i = 0;
+            if (status === 'En Route' && routePoints.length > 1) {
+                var cum = [0];
+                for (var n = 1; n < routePoints.length; n++) {
+                    var dy = (routePoints[n][0] - routePoints[n - 1][0]) * 111;
+                    var dx = (routePoints[n][1] - routePoints[n - 1][1]) * 111 * Math.cos(routePoints[n][0] * Math.PI / 180);
+                    cum.push(cum[n - 1] + Math.sqrt(dx * dx + dy * dy));
+                }
+                var totalKm = cum[cum.length - 1] || 1;
+                var tripMs = Math.max(300000, Math.min(420000, totalKm / 50 * 3600000 / 8));
+                var started = Date.now();
                 animationInterval = setInterval(function () {
-                    i++;
-                    if (i >= routePoints.length) i = 0;
-                    vehicleMarker.setLatLng(routePoints[i]);
-                }, 60);
+                    var t = Math.min(1, (Date.now() - started) / tripMs);
+                    var dist = t * totalKm;
+                    var idx = 1;
+                    while (idx < cum.length - 1 && cum[idx] < dist) idx++;
+                    var span = cum[idx] - cum[idx - 1] || 1;
+                    var f = Math.max(0, Math.min(1, (dist - cum[idx - 1]) / span));
+                    vehicleMarker.setLatLng([
+                        routePoints[idx - 1][0] + (routePoints[idx][0] - routePoints[idx - 1][0]) * f,
+                        routePoints[idx - 1][1] + (routePoints[idx][1] - routePoints[idx - 1][1]) * f
+                    ]);
+                    if (t >= 1) clearInterval(animationInterval);
+                }, 250);
             }
         };
         if (window.jQuery) {

@@ -741,52 +741,6 @@ namespace KeystoneLogistics.Controllers
             TempData["SuccessMessage"] = "Sent to all drivers: " + label + " on " + route + ".";
             return RedirectToAction("Index");
         }
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult CheckIn()
-        {
-            if (Session["UserRole"]?.ToString() != "Driver") return RedirectToAction("Index");
-            int userId = Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int id) ? id : 0;
-            if (userId == 0)
-            {
-                TempData["ErrorMessage"] = "Driver session missing. Log in again.";
-                return RedirectToAction("Index");
-            }
-            var last = db.Loads
-                .Where(l => l.DriverId == userId && l.DeliveredDate.HasValue)
-                .OrderByDescending(l => l.DeliveredDate)
-                .FirstOrDefault();
-            if (last == null)
-            {
-                TempData["ErrorMessage"] = "No completed job to check in against.";
-                return RedirectToAction("Index");
-            }
-            bool already = db.AuditLogs.Any(a => a.LoadId == last.LoadId && a.Action != null && a.Action.StartsWith("RETURN"));
-            if (already)
-            {
-                TempData["ErrorMessage"] = "Already checked in for " + last.TrackingNumber + ".";
-                return RedirectToAction("Index");
-            }
-            DateTime back = DateTime.Now;
-            string who = Session["Username"]?.ToString() ?? DriverName(last);
-            db.AuditLogs.Add(new AuditLog
-            {
-                LoadId = last.LoadId,
-                Action = Clip("RETURN " + back.ToString("HH:mm") + " " + last.TrackingNumber),
-                PerformedBy = who,
-                Timestamp = back
-            });
-            SaveSafe();
-            string body = "<h2 style='color:#2F6F5E;'>DRIVER BACK AT BASE</h2>"
-                + "<p>Driver: " + who + "</p>"
-                + "<p>Job: " + last.TrackingNumber + "</p>"
-                + "<p>Drop-off: " + last.DropoffLocation + "</p>"
-                + "<p>Delivered: " + (last.DeliveredDate.HasValue ? last.DeliveredDate.Value.ToString("HH:mm") : "") + "</p>"
-                + "<p>Returned: " + back.ToString("HH:mm") + "</p>";
-            SendEmail(AdminEmail, "RETURN " + last.TrackingNumber + " " + who, body);
-            TempData["SuccessMessage"] = "Checked in at base at " + back.ToString("HH:mm") + " after " + last.TrackingNumber + ".";
-            return RedirectToAction("Index");
-        }
         protected override void Dispose(bool disposing)
         {
             if (disposing) db.Dispose();
